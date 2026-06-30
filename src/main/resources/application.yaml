@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: core-banking
+  datasource:
+    url: jdbc:postgresql://localhost:5432/core_banking_database
+    username: banking_admin
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: banking_admin
+    password: password
