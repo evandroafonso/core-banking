@@ -3,7 +3,6 @@ package com.tuum.corebanking.config;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -13,20 +12,17 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
-@MapperScan("com.tuum.corebanking.mapper")
 public class MyBatisConfig {
 
     @Bean
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
-
         factoryBean.setMapperLocations(
-                new PathMatchingResourcePatternResolver()
-                        .getResources("classpath:mapper/*.xml")
+                new PathMatchingResourcePatternResolver().getResources("classpath:mapper/*.xml")
         );
-
-        factoryBean.setTypeAliasesPackage("com.tuum.corebanking.model");
+        factoryBean.setTypeAliasesPackage("com.tuum.corebanking.account.model");
+        factoryBean.setTypeHandlersPackage("com.tuum.corebanking.config");
 
         return factoryBean.getObject();
     }
