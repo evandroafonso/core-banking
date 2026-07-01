@@ -47,7 +47,7 @@ class BalanceServiceTest {
         BalanceResponse response2 = new BalanceResponse(BigDecimal.ZERO, Currency.USD);
         List<BalanceResponse> expectedResponses = List.of(response1, response2);
 
-        when(balanceConverter.toEntities(currencies, accountRequest, accountId)).thenReturn(balances);
+        when(balanceConverter.toEntities(currencies, accountId)).thenReturn(balances);
         when(balanceConverter.toResponses(balances)).thenReturn(expectedResponses);
 
         List<BalanceResponse> actualResponses = balanceService.create(currencies, accountRequest, accountId);
@@ -56,7 +56,7 @@ class BalanceServiceTest {
         assertEquals(expectedResponses.size(), actualResponses.size());
         assertEquals(expectedResponses, actualResponses);
 
-        verify(balanceConverter).toEntities(currencies, accountRequest, accountId);
+        verify(balanceConverter).toEntities(currencies, accountId);
         verify(balanceMapper).insert(balance1);
         verify(balanceMapper).insert(balance2);
         verify(balanceConverter).toResponses(balances);
@@ -70,7 +70,7 @@ class BalanceServiceTest {
         List<Balance> balances = Collections.emptyList();
         List<BalanceResponse> expectedResponses = Collections.emptyList();
 
-        when(balanceConverter.toEntities(currencies, accountRequest, accountId)).thenReturn(balances);
+        when(balanceConverter.toEntities(currencies, accountId)).thenReturn(balances);
         when(balanceConverter.toResponses(balances)).thenReturn(expectedResponses);
 
         List<BalanceResponse> actualResponses = balanceService.create(currencies, accountRequest, accountId);
@@ -78,7 +78,7 @@ class BalanceServiceTest {
         assertNotNull(actualResponses);
         assertTrue(actualResponses.isEmpty());
 
-        verify(balanceConverter).toEntities(currencies, accountRequest, accountId);
+        verify(balanceConverter).toEntities(currencies, accountId);
         verify(balanceMapper, never()).insert(any(Balance.class));
         verify(balanceConverter).toResponses(balances);
     }
@@ -89,11 +89,11 @@ class BalanceServiceTest {
         AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", List.of("EUR"));
         Long accountId = 1L;
 
-        when(balanceConverter.toEntities(currencies, accountRequest, accountId)).thenThrow(new RuntimeException("Conversion error"));
+        when(balanceConverter.toEntities(currencies, accountId)).thenThrow(new RuntimeException("Conversion error"));
 
         assertThrows(RuntimeException.class, () -> balanceService.create(currencies, accountRequest, accountId));
 
-        verify(balanceConverter).toEntities(currencies, accountRequest, accountId);
+        verify(balanceConverter).toEntities(currencies, accountId);
         verifyNoInteractions(balanceMapper);
     }
 
@@ -106,12 +106,12 @@ class BalanceServiceTest {
         Balance balance = new Balance();
         List<Balance> balances = List.of(balance);
 
-        when(balanceConverter.toEntities(currencies, accountRequest, accountId)).thenReturn(balances);
+        when(balanceConverter.toEntities(currencies, accountId)).thenReturn(balances);
         doThrow(new RuntimeException("Database error")).when(balanceMapper).insert(balance);
 
         assertThrows(RuntimeException.class, () -> balanceService.create(currencies, accountRequest, accountId));
 
-        verify(balanceConverter).toEntities(currencies, accountRequest, accountId);
+        verify(balanceConverter).toEntities(currencies, accountId);
         verify(balanceMapper).insert(balance);
         verify(balanceConverter, never()).toResponses(any());
     }
@@ -125,12 +125,12 @@ class BalanceServiceTest {
         Balance balance = new Balance();
         List<Balance> balances = List.of(balance);
 
-        when(balanceConverter.toEntities(currencies, accountRequest, accountId)).thenReturn(balances);
+        when(balanceConverter.toEntities(currencies, accountId)).thenReturn(balances);
         when(balanceConverter.toResponses(balances)).thenThrow(new RuntimeException("Response mapping error"));
 
         assertThrows(RuntimeException.class, () -> balanceService.create(currencies, accountRequest, accountId));
 
-        verify(balanceConverter).toEntities(currencies, accountRequest, accountId);
+        verify(balanceConverter).toEntities(currencies, accountId);
         verify(balanceMapper).insert(balance);
         verify(balanceConverter).toResponses(balances);
     }

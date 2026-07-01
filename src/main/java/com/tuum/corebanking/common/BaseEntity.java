@@ -19,4 +19,11 @@ public abstract class BaseEntity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    public void initializeNewAccount() {
+        this.businessId = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
 }
+

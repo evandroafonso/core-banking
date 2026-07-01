@@ -12,3 +12,8 @@ spring:
     port: 5672
     username: banking_admin
     password: password
+
+app:
+  rabbitmq:
+    exchange:
+      core-events: core-banking-exchange

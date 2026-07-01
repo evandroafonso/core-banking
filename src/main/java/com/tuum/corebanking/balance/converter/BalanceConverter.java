@@ -1,6 +1,5 @@
 package com.tuum.corebanking.balance.converter;
 
-import com.tuum.corebanking.account.dto.request.AccountRequest;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
@@ -15,7 +14,7 @@ import java.util.stream.Collectors;
 @Component
 public class BalanceConverter {
 
-    public List<Balance> toEntities(List<Currency> currencies, AccountRequest request, Long accountId) {
+    public List<Balance> toEntities(List<Currency> currencies, Long accountId) {
         LocalDateTime now = LocalDateTime.now();
 
         return currencies.stream()

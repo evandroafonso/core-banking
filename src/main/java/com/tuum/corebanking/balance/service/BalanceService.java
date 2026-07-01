@@ -22,9 +22,9 @@ public class BalanceService {
     }
 
     public List<BalanceResponse> create(List<Currency> currencies, AccountRequest accountRequest, Long accountId) {
-        List<Balance> balances = balanceConverter.toEntities(currencies, accountRequest, accountId);
+        List<Balance> balances = balanceConverter.toEntities(currencies, accountId);
         balances.forEach(balanceMapper::insert);
         return balanceConverter.toResponses(balances);
     }
-    
+
 }
