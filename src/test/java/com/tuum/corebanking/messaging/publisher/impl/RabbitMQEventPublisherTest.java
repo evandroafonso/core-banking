@@ -48,7 +48,7 @@ class RabbitMQEventPublisherTest {
         publisher.publish(null, event);
 
         verify(exchange, times(1)).getName();
-        verify(rabbitTemplate, times(1)).convertAndSend(exchangeName, (String) null, event);
+        verify(rabbitTemplate, times(1)).convertAndSend(exchangeName, null, event);
     }
 
     @Test

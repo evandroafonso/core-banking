@@ -1,6 +1,5 @@
 package com.tuum.corebanking.balance.service;
 
-import com.tuum.corebanking.account.dto.request.AccountRequest;
 import com.tuum.corebanking.balance.converter.BalanceConverter;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.mapper.BalanceMapper;
@@ -15,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,7 +34,6 @@ class BalanceServiceTest {
     @Test
     void createBalancesSuccessfully() {
         List<Currency> currencies = List.of(Currency.EUR, Currency.USD);
-        AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", List.of("EUR", "USD"));
         Long accountId = 1L;
 
         Balance balance1 = new Balance();
@@ -65,7 +62,6 @@ class BalanceServiceTest {
     @Test
     void createBalancesWithEmptyCurrenciesList() {
         List<Currency> currencies = Collections.emptyList();
-        AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", Collections.emptyList());
         Long accountId = 1L;
         List<Balance> balances = Collections.emptyList();
         List<BalanceResponse> expectedResponses = Collections.emptyList();
@@ -86,7 +82,6 @@ class BalanceServiceTest {
     @Test
     void createBalancesThrowsExceptionWhenConverterFailsToEntities() {
         List<Currency> currencies = List.of(Currency.EUR);
-        AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", List.of("EUR"));
         Long accountId = 1L;
 
         when(balanceConverter.toEntities(currencies, accountId)).thenThrow(new RuntimeException("Conversion error"));
@@ -100,7 +95,6 @@ class BalanceServiceTest {
     @Test
     void createBalancesThrowsExceptionWhenMapperInsertFails() {
         List<Currency> currencies = List.of(Currency.EUR);
-        AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", List.of("EUR"));
         Long accountId = 1L;
 
         Balance balance = new Balance();
@@ -119,7 +113,6 @@ class BalanceServiceTest {
     @Test
     void createBalancesThrowsExceptionWhenConverterFailsToResponses() {
         List<Currency> currencies = List.of(Currency.EUR);
-        AccountRequest accountRequest = new AccountRequest(UUID.randomUUID(), "EE", List.of("EUR"));
         Long accountId = 1L;
 
         Balance balance = new Balance();
