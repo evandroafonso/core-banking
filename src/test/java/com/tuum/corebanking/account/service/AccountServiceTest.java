@@ -62,7 +62,7 @@ class AccountServiceTest {
         List<BalanceResponse> balances = List.of(mock(BalanceResponse.class));
 
         when(accountConverter.toEntity(request)).thenReturn(account);
-        when(balanceService.create(List.of(Currency.EUR), request, 100L)).thenReturn(balances);
+        when(balanceService.create(List.of(Currency.EUR), 100L)).thenReturn(balances);
         when(accountConverter.toResponse(account, balances)).thenReturn(expectedResponse);
 
         AccountResponse actualResponse = accountService.create(request);
@@ -73,7 +73,7 @@ class AccountServiceTest {
         assertThat(account.getUpdatedAt()).isNotNull();
 
         verify(accountMapper).insert(account);
-        verify(balanceService).create(List.of(Currency.EUR), request, 100L);
+        verify(balanceService).create(List.of(Currency.EUR), 100L);
 
         verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
         AccountCreatedEvent publishedEvent = eventCaptor.getValue();
@@ -92,11 +92,11 @@ class AccountServiceTest {
         account.setId(200L);
 
         when(accountConverter.toEntity(request)).thenReturn(account);
-        when(balanceService.create(any(), eq(request), eq(200L))).thenReturn(List.of());
+        when(balanceService.create(any(), eq(200L))).thenReturn(List.of());
 
         accountService.create(request);
 
-        verify(balanceService).create(List.of(Currency.EUR, Currency.USD), request, 200L);
+        verify(balanceService).create(List.of(Currency.EUR, Currency.USD), 200L);
     }
 
     @Test
@@ -113,7 +113,7 @@ class AccountServiceTest {
 
         verify(accountConverter, never()).toEntity(any());
         verify(accountMapper, never()).insert(any());
-        verify(balanceService, never()).create(any(), any(), any());
+        verify(balanceService, never()).create(any(), any());
         verify(applicationEventPublisher, never()).publishEvent(any());
     }
 }

@@ -1,6 +1,5 @@
 package com.tuum.corebanking.balance.converter;
 
-import com.tuum.corebanking.account.dto.request.AccountRequest;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
@@ -10,7 +9,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 class BalanceConverterTest {
 
@@ -19,7 +17,6 @@ class BalanceConverterTest {
     @Test
     void toEntitiesShouldMapCurrenciesToBalances() {
         List<Currency> currencies = List.of(Currency.EUR, Currency.USD);
-        AccountRequest request = mock(AccountRequest.class);
         Long accountId = 1L;
 
         List<Balance> result = balanceConverter.toEntities(currencies, accountId);

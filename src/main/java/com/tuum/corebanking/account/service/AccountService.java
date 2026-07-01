@@ -46,7 +46,7 @@ public class AccountService {
         account.initializeNewAccount();
         accountMapper.insert(account);
 
-        List<BalanceResponse> balances = balanceService.create(currencies, request, account.getId());
+        List<BalanceResponse> balances = balanceService.create(currencies, account.getId());
         AccountResponse accountResponse = accountConverter.toResponse(account, balances);
 
         publishEvent(accountResponse);
