@@ -4,22 +4,16 @@
 
     <resultMap id="AccountResultMap" type="Account">
         <id property="id" column="id"/>
-        <result property="businessId" column="business_id" javaType="java.util.UUID" jdbcType="OTHER"/>
+        <result property="businessId" column="business_id"/>
         <result property="country" column="country"/>
-        <result property="customerId" column="customer_id" javaType="java.util.UUID" jdbcType="OTHER"/>
+        <result property="customerId" column="customer_id"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO accounts (business_id, country, customer_id, created_at, updated_at)
-        VALUES (
-        #{businessId, jdbcType=OTHER},
-        #{country},
-        #{customerId, jdbcType=OTHER},
-        #{createdAt},
-        #{updatedAt}
-        )
+        VALUES (#{businessId}, #{country}, #{customerId}, #{createdAt}, #{updatedAt})
     </insert>
 
     <select id="findById" resultMap="AccountResultMap">
@@ -31,13 +25,13 @@
     <select id="findByBusinessId" resultMap="AccountResultMap">
         SELECT id, business_id, country, customer_id, created_at, updated_at
         FROM accounts
-        WHERE business_id = #{businessId, jdbcType=OTHER}
+        WHERE business_id = #{businessId}
     </select>
 
     <select id="findByCustomerId" resultMap="AccountResultMap">
         SELECT id, business_id, country, customer_id, created_at, updated_at
         FROM accounts
-        WHERE customer_id = #{customerId, jdbcType=OTHER}
+        WHERE customer_id = #{customerId}
         ORDER BY created_at DESC
     </select>
 

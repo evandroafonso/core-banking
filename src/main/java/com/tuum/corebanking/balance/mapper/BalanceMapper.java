@@ -1,7 +1,7 @@
 package com.tuum.corebanking.balance.mapper;
 
-import com.tuum.corebanking.account.model.Balance;
-import com.tuum.corebanking.account.model.Currency;
+import com.tuum.corebanking.balance.model.Balance;
+import com.tuum.corebanking.balance.model.Currency;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -21,5 +21,5 @@ public interface BalanceMapper {
             @Param("currency") Currency currency
     );
 
-    int updateAvailableAmount(@Param("id") Long id, @Param("availableAmount") BigDecimal availableAmount);
+    int updateBalance(@Param("id") Long id, @Param("balance") BigDecimal balance);
 }

@@ -21,7 +21,7 @@ public class MyBatisConfig {
         factoryBean.setMapperLocations(
                 new PathMatchingResourcePatternResolver().getResources("classpath:mapper/*.xml")
         );
-        factoryBean.setTypeAliasesPackage("com.tuum.corebanking.account.model");
+        factoryBean.setTypeAliasesPackage("com.tuum.corebanking.*.model");
         factoryBean.setTypeHandlersPackage("com.tuum.corebanking.config");
 
         return factoryBean.getObject();

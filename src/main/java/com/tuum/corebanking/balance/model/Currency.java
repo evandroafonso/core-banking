@@ -1,4 +1,4 @@
-package com.tuum.corebanking.account.model;
+package com.tuum.corebanking.balance.model;
 
 public enum Currency {
 

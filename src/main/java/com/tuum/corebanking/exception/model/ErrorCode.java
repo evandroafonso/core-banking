@@ -1,0 +1,12 @@
+package com.tuum.corebanking.exception.model;
+
+public enum ErrorCode {
+    NOT_FOUND,
+    INSUFFICIENT_FUNDS,
+    BUSINESS_ERROR,
+    VALIDATION_ERROR,
+    INVALID_TRANSACTION_AMOUNT,
+    INTERNAL_ERROR,
+    INVALID_CURRENCY,
+    INVALID_TRANSACTION_DIRECTION
+}
