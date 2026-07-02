@@ -35,7 +35,6 @@ class EnumParserTest {
     void parseShouldReturnEnumWhenValidString(Class<? extends Enum<?>> enumClass,
                                               String input,
                                               Enum<?> expected) {
-        @SuppressWarnings("unchecked")
         Function<String, RuntimeException> exceptionSupplier =
                 value -> new IllegalArgumentException("Invalid value: " + value);
 

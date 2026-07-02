@@ -73,7 +73,7 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.balances", hasSize(2)))
                 .andReturn().getResponse().getContentAsString();
 
-        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asString());
 
         Account persisted = accountMapper.findByBusinessId(accountId).orElseThrow();
         assertThat(persisted.getCountry()).isEqualTo("EE");
@@ -100,7 +100,7 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asString());
 
         mockMvc.perform(get("/api/accounts/{id}", accountId))
                 .andExpect(status().isOk())
