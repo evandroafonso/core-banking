@@ -1,5 +1,6 @@
-package com.tuum.corebanking.balance.model;
+package com.tuum.corebanking.transaction.model;
 
+import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.common.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,10 +15,12 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Balance extends BaseEntity {
+public class Transaction extends BaseEntity {
 
     private Long accountId;
+    private BigDecimal amount;
     private Currency currency;
-    private BigDecimal availableAmount = BigDecimal.ZERO;
-
+    private Direction direction;
+    private String description;
+    private BigDecimal balanceAfter;
 }

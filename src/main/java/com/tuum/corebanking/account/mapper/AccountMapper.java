@@ -17,5 +17,7 @@ public interface AccountMapper {
 
     Optional<Account> findByBusinessId(@Param("businessId") UUID businessId);
 
+    Optional<Long> findAccountIdByBusinessId(@Param("businessId") UUID businessId);
+
     List<Account> findByCustomerId(@Param("customerId") UUID customerId);
 }

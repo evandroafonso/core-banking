@@ -14,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -106,6 +107,22 @@ class GlobalExceptionHandlerTest {
         assertEquals("Invalid value 'invalid-uuid' for parameter 'accountId'", response.getBody().message());
         assertEquals("VALIDATION_ERROR", response.getBody().errorCode());
         assertEquals(400, response.getBody().status());
+        assertNotNull(response.getBody().timestamp());
+    }
+
+    @Test
+    void handleNoResourceFoundSuccessfully() {
+        NoResourceFoundException exception = mock(NoResourceFoundException.class);
+        when(exception.getMessage()).thenReturn("No static resource api/unknown.");
+
+        ResponseEntity<ErrorResponse> response = handler.handleNoResourceFound(exception);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("No static resource api/unknown.", response.getBody().message());
+        assertEquals("NOT_FOUND", response.getBody().errorCode());
+        assertEquals(404, response.getBody().status());
         assertNotNull(response.getBody().timestamp());
     }
 }

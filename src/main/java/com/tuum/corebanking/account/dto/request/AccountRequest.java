@@ -20,6 +20,5 @@ public record AccountRequest(
         @NotEmpty(message = "At least one currency is required")
         List<String> currencies
 
-
 ) {
 }

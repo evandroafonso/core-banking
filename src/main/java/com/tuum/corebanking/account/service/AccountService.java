@@ -9,14 +9,13 @@ import com.tuum.corebanking.account.model.Account;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
+import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.exception.AccountNotFoundException;
-import com.tuum.corebanking.exception.InvalidCurrencyException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,17 +41,16 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(AccountRequest request) {
-        List<Currency> currencies = validateAndConvertCurrencies(request.currencies());
+        List<Currency> currencies = CurrencyParser.parseList(request.currencies());
 
         Account account = accountConverter.toEntity(request);
-        account.initializeNewAccount();
+        account.initAuditFields();
         accountMapper.insert(account);
 
         List<BalanceResponse> balances = balanceService.create(currencies, account.getId());
         AccountResponse accountResponse = accountConverter.toResponse(account, balances);
 
         publishEvent(accountResponse);
-
         return accountResponse;
     }
 
@@ -65,29 +63,16 @@ public class AccountService {
         applicationEventPublisher.publishEvent(event);
     }
 
-    private List<Currency> validateAndConvertCurrencies(List<String> rawCurrencies) {
-        return rawCurrencies.stream()
-                .map(this::parseCurrency)
-                .distinct()
-                .toList();
-    }
-
-    private Currency parseCurrency(String raw) {
-        try {
-            return Currency.valueOf(raw.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new InvalidCurrencyException(
-                    "Invalid currency: '%s'. Accepted values: %s"
-                            .formatted(raw, Arrays.toString(Currency.values()))
-            );
-        }
-    }
-
     public AccountResponse findById(UUID accountId) {
         Account account = accountMapper.findByBusinessId(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountId)));
         List<BalanceResponse> balancesResponse = balanceService.findByAccountId(account.getId());
 
         return accountConverter.toResponse(account, balancesResponse);
+    }
+
+    public Long findAccountIdByBusinessId(UUID accountBusinessId) {
+        return accountMapper.findAccountIdByBusinessId(accountBusinessId)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));
     }
 }

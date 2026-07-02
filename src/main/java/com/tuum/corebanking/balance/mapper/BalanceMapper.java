@@ -21,5 +21,5 @@ public interface BalanceMapper {
             @Param("currency") Currency currency
     );
 
-    int updateBalance(@Param("id") Long id, @Param("balance") BigDecimal balance);
+    int updateAvailableAmount(@Param("id") Long id, @Param("availableAmount") BigDecimal availableAmount);
 }

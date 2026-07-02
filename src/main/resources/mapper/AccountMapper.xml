@@ -35,4 +35,10 @@
         ORDER BY created_at DESC
     </select>
 
+    <select id="findAccountIdByBusinessId" resultType="Long">
+        SELECT id
+        FROM accounts
+        WHERE business_id = #{businessId, jdbcType=OTHER}
+    </select>
+
 </mapper>

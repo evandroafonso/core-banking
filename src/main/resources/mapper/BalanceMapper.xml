@@ -7,33 +7,33 @@
         <result property="businessId" column="business_id"/>
         <result property="accountId" column="account_id"/>
         <result property="currency" column="currency" javaType="com.tuum.corebanking.balance.model.Currency"/>
-        <result property="balance" column="balance"/>
+        <result property="availableAmount" column="available_amount"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO balances (business_id, account_id, currency, balance, created_at, updated_at)
-        VALUES (#{businessId}, #{accountId}, #{currency}, #{balance}, #{createdAt}, #{updatedAt})
+        INSERT INTO balances (business_id, account_id, currency, available_amount, created_at, updated_at)
+        VALUES (#{businessId}, #{accountId}, #{currency}, #{availableAmount}, #{createdAt}, #{updatedAt})
     </insert>
 
     <select id="findByAccountId" resultMap="BalanceResultMap">
-        SELECT id, business_id, account_id, currency, balance, created_at, updated_at
+        SELECT id, business_id, account_id, currency, available_amount, created_at, updated_at
         FROM balances
         WHERE account_id = #{accountId}
     </select>
 
     <!-- pessimist lock-->
     <select id="findByAccountIdAndCurrencyForUpdate" resultMap="BalanceResultMap">
-        SELECT id, business_id, account_id, currency, balance, created_at, updated_at
+        SELECT id, business_id, account_id, currency, available_amount, created_at, updated_at
         FROM balances
         WHERE account_id = #{accountId} AND currency = #{currency}
         FOR UPDATE
     </select>
 
-    <update id="updatebalance">
+    <update id="updateAvailableAmount">
         UPDATE balances
-        SET balance = #{balance},
+        SET available_amount = #{availableAmount},
         updated_at = now()
         WHERE id = #{id}
     </update>

@@ -22,7 +22,7 @@ public class BalanceConverter {
                         .businessId(UUID.randomUUID())
                         .accountId(accountId)
                         .currency(currency)
-                        .balance(BigDecimal.ZERO)
+                        .availableAmount(BigDecimal.ZERO)
                         .createdAt(now)
                         .updatedAt(now)
                         .build())
@@ -32,7 +32,7 @@ public class BalanceConverter {
     public List<BalanceResponse> toResponses(List<Balance> balances) {
         return balances.stream().map(
                 balance -> BalanceResponse.builder()
-                        .balance(balance.getBalance().stripTrailingZeros())
+                        .balance(balance.getAvailableAmount().stripTrailingZeros())
                         .currency(balance.getCurrency())
                         .build()
         ).collect(Collectors.toList());
