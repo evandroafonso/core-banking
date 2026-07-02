@@ -7,9 +7,6 @@ import java.util.List;
 
 public final class CurrencyParser {
 
-    private CurrencyParser() {
-    }
-
     public static Currency parse(String raw) {
         return EnumParser.parse(
                 raw,

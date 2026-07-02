@@ -5,9 +5,6 @@ import com.tuum.corebanking.transaction.model.Direction;
 
 public final class DirectionParser {
 
-    private DirectionParser() {
-    }
-
     public static Direction parse(String raw) {
         return EnumParser.parse(
                 raw,

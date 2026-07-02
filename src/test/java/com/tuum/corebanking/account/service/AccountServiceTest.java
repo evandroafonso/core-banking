@@ -193,4 +193,73 @@ class AccountServiceTest {
         verify(balanceService).findByAccountId(internalId);
         verify(accountConverter).toResponse(account, balancesResponse);
     }
+
+    @Test
+    void findAccountIdByBusinessIdShouldReturnAccountIdWhenAccountExists() {
+        UUID accountBusinessId = UUID.randomUUID();
+        Long expectedAccountId = 1L;
+
+        when(accountMapper.findAccountIdByBusinessId(accountBusinessId))
+                .thenReturn(Optional.of(expectedAccountId));
+
+        Long actualAccountId = accountService.findAccountIdByBusinessId(accountBusinessId);
+
+        assertThat(actualAccountId)
+                .isNotNull()
+                .isEqualTo(expectedAccountId);
+
+        verify(accountMapper).findAccountIdByBusinessId(accountBusinessId);
+    }
+
+    @Test
+    void findAccountIdByBusinessIdShouldThrowAccountNotFoundExceptionWhenAccountDoesNotExist() {
+        UUID accountBusinessId = UUID.randomUUID();
+
+        when(accountMapper.findAccountIdByBusinessId(accountBusinessId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.findAccountIdByBusinessId(accountBusinessId))
+                .isInstanceOf(AccountNotFoundException.class)
+                .hasMessageContaining("Account not found with id")
+                .hasMessageContaining(accountBusinessId.toString());
+
+        verify(accountMapper).findAccountIdByBusinessId(accountBusinessId);
+    }
+
+    @Test
+    void findAccountIdByBusinessIdShouldHandleMultipleDifferentIds() {
+        UUID accountBusinessId1 = UUID.randomUUID();
+        UUID accountBusinessId2 = UUID.randomUUID();
+        Long expectedAccountId1 = 1L;
+        Long expectedAccountId2 = 2L;
+
+        when(accountMapper.findAccountIdByBusinessId(accountBusinessId1))
+                .thenReturn(Optional.of(expectedAccountId1));
+        when(accountMapper.findAccountIdByBusinessId(accountBusinessId2))
+                .thenReturn(Optional.of(expectedAccountId2));
+
+        Long actualAccountId1 = accountService.findAccountIdByBusinessId(accountBusinessId1);
+        Long actualAccountId2 = accountService.findAccountIdByBusinessId(accountBusinessId2);
+
+        assertThat(actualAccountId1).isEqualTo(expectedAccountId1);
+        assertThat(actualAccountId2).isEqualTo(expectedAccountId2);
+
+        verify(accountMapper).findAccountIdByBusinessId(accountBusinessId1);
+        verify(accountMapper).findAccountIdByBusinessId(accountBusinessId2);
+    }
+
+    @Test
+    void findAccountIdByBusinessIdShouldThrowExceptionWithCorrectMessageFormat() {
+        UUID accountBusinessId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        String expectedMessage = "Account not found with id: 123e4567-e89b-12d3-a456-426614174000";
+
+        when(accountMapper.findAccountIdByBusinessId(accountBusinessId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.findAccountIdByBusinessId(accountBusinessId))
+                .isInstanceOf(AccountNotFoundException.class)
+                .hasMessage(expectedMessage);
+
+        verify(accountMapper).findAccountIdByBusinessId(accountBusinessId);
+    }
 }

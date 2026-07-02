@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.7'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'com.tuum'
@@ -17,6 +18,26 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    set('testcontainersVersion', "1.20.4")
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/java')
+        }
+        resources.srcDir file('src/integrationTest/resources')
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
@@ -27,6 +48,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-amqp-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
@@ -36,13 +58,121 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.amqp:spring-rabbit-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:rabbitmq'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+dependencyManagement {
+    imports {
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+    }
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
     systemProperty 'user.timezone', 'UTC'
 }
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter test
+}
+
+// Configuração do JaCoCo para testes unitários
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+// Relatório apenas para testes unitários
+jacocoTestReport {
+    dependsOn test // Depende apenas de test, não de integrationTest
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/test.exec")
+    )
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Relatório combinado (unitários + integração)
+tasks.register('jacocoCombinedReport', JacocoReport) {
+    description = 'Generates combined JaCoCo report for unit and integration tests.'
+    group = 'verification'
+
+    dependsOn test, integrationTest
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/test.exec"),
+            layout.buildDirectory.file("jacoco/integrationTest.exec")
+    )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Verificação de cobertura apenas para testes unitários
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/test.exec")
+    )
+
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+// Verificação de cobertura combinada
+tasks.register('jacocoCombinedCoverageVerification', JacocoCoverageVerification) {
+    description = 'Verifies combined coverage for unit and integration tests.'
+    group = 'verification'
+
+    dependsOn jacocoCombinedReport
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/test.exec"),
+            layout.buildDirectory.file("jacoco/integrationTest.exec")
+    )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
+
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+
+// FinalizedBy apenas para test
+test {
+    finalizedBy jacocoTestReport
+}
+
+integrationTest {
+    finalizedBy jacocoCombinedReport
+}
+
+// check depende de ambos
+check.dependsOn integrationTest, jacocoTestCoverageVerification, jacocoCombinedCoverageVerification

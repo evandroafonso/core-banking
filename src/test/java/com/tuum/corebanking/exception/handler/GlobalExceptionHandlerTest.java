@@ -18,7 +18,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,7 +40,6 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleInsufficientFundsShouldReturnUnprocessable() {
         ResponseEntity<ErrorResponse> response = handler.handleInsufficientFunds(new InsufficientFundsException(BigDecimal.TEN));
-
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
         assertThat(response.getBody())
                 .isNotNull()
@@ -124,6 +125,107 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleHttpMessageNotReadableWithNonInvalidFormatCauseShouldReturnDefaultMessage() {
+        RuntimeException cause = new RuntimeException("Some other error");
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).isEqualTo("Malformed JSON request");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
+    void handleHttpMessageNotReadableWithEmptyPathAndEnumShouldReturnBadRequest() {
+        InvalidFormatException cause = mock(InvalidFormatException.class);
+
+        when(cause.getPath()).thenReturn(Collections.emptyList());
+        when(cause.getTargetType()).thenReturn((Class) Currency.class);
+        when(cause.getValue()).thenReturn("ABC");
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).contains("Invalid value 'ABC' for field 'field'");
+        assertThat(response.getBody().message()).contains("Accepted values:");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
+    void handleHttpMessageNotReadableWithEmptyPathAndNumberShouldReturnBadRequest() {
+        InvalidFormatException cause = mock(InvalidFormatException.class);
+
+        when(cause.getPath()).thenReturn(Collections.emptyList());
+        when(cause.getTargetType()).thenReturn((Class) Integer.class);
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).isEqualTo("Invalid numeric value for field 'field'. The value is out of range or improperly formatted.");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
+    void handleHttpMessageNotReadableWithEmptyPathAndNonEnumNonNumberShouldReturnGenericMessage() {
+        InvalidFormatException cause = mock(InvalidFormatException.class);
+
+        when(cause.getPath()).thenReturn(Collections.emptyList());
+        when(cause.getTargetType()).thenReturn((Class) String.class);
+        when(cause.getValue()).thenReturn("something");
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).isEqualTo("Invalid value for field 'field'.");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
+    void handleHttpMessageNotReadableWithPrimitiveTargetTypeShouldReturnBadRequest() {
+        InvalidFormatException cause = mock(InvalidFormatException.class);
+        JsonMappingException.Reference reference = mock(JsonMappingException.Reference.class);
+
+        when(reference.getDescription()).thenReturn("count");
+        when(cause.getPath()).thenReturn(List.of(reference));
+        when(cause.getTargetType()).thenReturn((Class) int.class); // tipo primitivo
+        when(cause.getValue()).thenReturn("abc");
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).isEqualTo("Invalid numeric value for field 'count'. The value is out of range or improperly formatted.");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
+    void handleHttpMessageNotReadableWithNonEnumNonNumberTargetTypeShouldReturnGenericMessage() {
+        InvalidFormatException cause = mock(InvalidFormatException.class);
+        JsonMappingException.Reference reference = mock(JsonMappingException.Reference.class);
+
+        when(reference.getDescription()).thenReturn("name");
+        when(cause.getPath()).thenReturn(List.of(reference));
+        when(cause.getTargetType()).thenReturn((Class) String.class);
+        when(cause.getValue()).thenReturn(12345);
+
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);
+
+        ResponseEntity<ErrorResponse> response = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().message()).isEqualTo("Invalid value for field 'name'.");
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR.name());
+    }
+
+    @Test
     void handleGenericExceptionShouldReturnInternalServerError() {
         ResponseEntity<ErrorResponse> response = handler.handleGeneric(new RuntimeException("Error"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -161,5 +263,32 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
         assertThat(response.getBody().status()).isEqualTo(404);
         assertThat(response.getBody().timestamp()).isNotNull();
+    }
+
+    @Test
+    void handleAccountNotFoundWithLongIdShouldReturnNotFoundAndFormattedMessage() {
+        Long accountId = 123L;
+        AccountNotFoundException exception = new AccountNotFoundException(accountId);
+
+        ResponseEntity<ErrorResponse> response = handler.handleAccountNotFound(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
+        assertThat(response.getBody().message()).isEqualTo("Account not found with id: 123");
+        assertThat(response.getBody().status()).isEqualTo(404);
+    }
+
+    @Test
+    void handleAccountNotFoundWithUUIDShouldReturnNotFoundAndFormattedMessage() {
+        UUID businessId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        AccountNotFoundException exception = new AccountNotFoundException(businessId);
+        ResponseEntity<ErrorResponse> response = handler.handleAccountNotFound(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
+        assertThat(response.getBody().message()).isEqualTo("Account not found with id: 123e4567-e89b-12d3-a456-426614174000");
+        assertThat(response.getBody().status()).isEqualTo(404);
     }
 }

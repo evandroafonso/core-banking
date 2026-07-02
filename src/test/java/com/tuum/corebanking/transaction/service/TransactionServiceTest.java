@@ -1,29 +1,31 @@
 package com.tuum.corebanking.transaction.service;
 
 import com.tuum.corebanking.account.service.AccountService;
-import com.tuum.corebanking.balance.mapper.BalanceMapper;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
+import com.tuum.corebanking.balance.service.BalanceService;
 import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InsufficientFundsException;
 import com.tuum.corebanking.exception.InvalidTransactionAmountException;
-import com.tuum.corebanking.messaging.publisher.EventPublisher;
+import com.tuum.corebanking.messaging.event.OperationType;
 import com.tuum.corebanking.transaction.converter.TransactionConverter;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
 import com.tuum.corebanking.transaction.dto.response.TransactionResponse;
+import com.tuum.corebanking.transaction.event.TransactionEvent;
 import com.tuum.corebanking.transaction.mapper.TransactionMapper;
 import com.tuum.corebanking.transaction.model.Direction;
 import com.tuum.corebanking.transaction.model.Transaction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,10 +45,10 @@ class TransactionServiceTest {
     private AccountService accountService;
 
     @Mock
-    private BalanceMapper balanceMapper;
+    private BalanceService balanceService;
 
     @Mock
-    private EventPublisher eventPublisher;
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -59,7 +61,7 @@ class TransactionServiceTest {
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
                 .isInstanceOf(InvalidTransactionAmountException.class);
 
-        verifyNoInteractions(accountService, balanceMapper, transactionMapper, transactionConverter);
+        verifyNoInteractions(accountService, balanceService, transactionMapper, transactionConverter, applicationEventPublisher);
     }
 
     @Test
@@ -70,7 +72,7 @@ class TransactionServiceTest {
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
                 .isInstanceOf(InvalidTransactionAmountException.class);
 
-        verifyNoInteractions(accountService, balanceMapper, transactionMapper, transactionConverter);
+        verifyNoInteractions(accountService, balanceService, transactionMapper, transactionConverter, applicationEventPublisher);
     }
 
     @Test
@@ -80,13 +82,16 @@ class TransactionServiceTest {
         Long accountId = 1L;
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, Currency.EUR)).thenReturn(Optional.empty());
+        when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR))
+                .thenThrow(new AccountNotFoundException("No balance found for account"));
 
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
                 .isInstanceOf(AccountNotFoundException.class)
                 .hasMessageContaining("No balance found for account");
 
-        verifyNoInteractions(transactionMapper, transactionConverter);
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(balanceService).findBalanceWithLock(accountId, accountBusinessId, Currency.EUR);
+        verifyNoInteractions(transactionMapper, transactionConverter, applicationEventPublisher);
     }
 
     @Test
@@ -102,12 +107,14 @@ class TransactionServiceTest {
                 .build();
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, Currency.EUR)).thenReturn(Optional.of(balance));
+        when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR)).thenReturn(balance);
 
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
                 .isInstanceOf(InsufficientFundsException.class);
 
-        verifyNoInteractions(transactionMapper, transactionConverter);
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(balanceService).findBalanceWithLock(accountId, accountBusinessId, Currency.EUR);
+        verifyNoInteractions(transactionMapper, transactionConverter, applicationEventPublisher);
     }
 
     @Test
@@ -123,14 +130,18 @@ class TransactionServiceTest {
                 .build();
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, Currency.EUR)).thenReturn(Optional.of(balance));
-        when(balanceMapper.updateAvailableAmount(10L, BigDecimal.TEN)).thenReturn(0);
+        when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR)).thenReturn(balance);
+        doThrow(new IllegalStateException("Failed to update balance, no rows affected for id: 10"))
+                .when(balanceService).update(balance, BigDecimal.TEN);
 
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Failed to update balance, no rows affected for id: 10");
 
-        verifyNoInteractions(transactionMapper, transactionConverter);
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(balanceService).findBalanceWithLock(accountId, accountBusinessId, Currency.EUR);
+        verify(balanceService).update(balance, BigDecimal.TEN);
+        verifyNoInteractions(transactionMapper, transactionConverter, applicationEventPublisher);
     }
 
     @Test
@@ -151,8 +162,7 @@ class TransactionServiceTest {
         );
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, Currency.EUR)).thenReturn(Optional.of(balance));
-        when(balanceMapper.updateAvailableAmount(10L, BigDecimal.TEN)).thenReturn(1);
+        when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR)).thenReturn(balance);
         when(transactionConverter.toEntity(request, accountId, BigDecimal.TEN, Currency.EUR, Direction.IN)).thenReturn(transaction);
         when(transactionConverter.toResponse(transaction, accountBusinessId)).thenReturn(expectedResponse);
 
@@ -160,6 +170,15 @@ class TransactionServiceTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
         verify(transactionMapper).insert(transaction);
+        verify(balanceService).update(balance, BigDecimal.TEN);
+
+        ArgumentCaptor<TransactionEvent> eventCaptor = ArgumentCaptor.forClass(TransactionEvent.class);
+        verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+
+        TransactionEvent capturedEvent = eventCaptor.getValue();
+        assertThat(capturedEvent.eventName()).isEqualTo("TransactionCreated");
+        assertThat(capturedEvent.operationType()).isEqualTo(OperationType.INSERT);
+        assertThat(capturedEvent.payload()).isEqualTo(expectedResponse);
     }
 
     @Test
@@ -181,8 +200,7 @@ class TransactionServiceTest {
         );
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, Currency.EUR)).thenReturn(Optional.of(balance));
-        when(balanceMapper.updateAvailableAmount(10L, expectedBalanceAfter)).thenReturn(1);
+        when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR)).thenReturn(balance);
         when(transactionConverter.toEntity(request, accountId, expectedBalanceAfter, Currency.EUR, Direction.OUT)).thenReturn(transaction);
         when(transactionConverter.toResponse(transaction, accountBusinessId)).thenReturn(expectedResponse);
 
@@ -190,6 +208,15 @@ class TransactionServiceTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
         verify(transactionMapper).insert(transaction);
+        verify(balanceService).update(balance, expectedBalanceAfter);
+
+        ArgumentCaptor<TransactionEvent> eventCaptor = ArgumentCaptor.forClass(TransactionEvent.class);
+        verify(applicationEventPublisher).publishEvent(eventCaptor.capture());
+
+        TransactionEvent capturedEvent = eventCaptor.getValue();
+        assertThat(capturedEvent.eventName()).isEqualTo("TransactionCreated");
+        assertThat(capturedEvent.operationType()).isEqualTo(OperationType.INSERT);
+        assertThat(capturedEvent.payload()).isEqualTo(expectedResponse);
     }
 
     @Test
@@ -204,6 +231,8 @@ class TransactionServiceTest {
                 .isInstanceOf(AccountNotFoundException.class)
                 .hasMessageContaining(String.valueOf(accountId));
 
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(transactionMapper).findByAccountId(accountId);
         verifyNoInteractions(transactionConverter);
     }
 
@@ -224,5 +253,8 @@ class TransactionServiceTest {
         List<TransactionResponse> actualResponses = transactionService.findByAccountId(accountBusinessId);
 
         assertThat(actualResponses).isEqualTo(expectedResponses);
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(transactionMapper).findByAccountId(accountId);
+        verify(transactionConverter).toResponses(transactions, accountBusinessId);
     }
 }

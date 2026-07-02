@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public final class EnumParser {
-
-    private EnumParser() {
-    }
-
+    
     public static <T extends Enum<T>> T parse(
             String raw,
             Class<T> enumClass,
