@@ -32,7 +32,7 @@ public class BalanceConverter {
     public List<BalanceResponse> toResponses(List<Balance> balances) {
         return balances.stream().map(
                 balance -> BalanceResponse.builder()
-                        .balance(balance.getBalance())
+                        .balance(balance.getBalance().stripTrailingZeros())
                         .currency(balance.getCurrency())
                         .build()
         ).collect(Collectors.toList());

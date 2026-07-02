@@ -26,4 +26,9 @@ public class BalanceService {
         return balanceConverter.toResponses(balances);
     }
 
+    public List<BalanceResponse> findByAccountId(Long accountId) {
+        List<Balance> balances = balanceMapper.findByAccountId(accountId);
+        return balanceConverter.toResponses(balances);
+    }
+
 }

@@ -13,10 +13,13 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -87,5 +90,22 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleGeneric(new RuntimeException("Error"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.INTERNAL_ERROR.name());
+    }
+
+    @Test
+    void handleMethodArgumentTypeMismatchSuccessfully() {
+        MethodArgumentTypeMismatchException exception = mock(MethodArgumentTypeMismatchException.class);
+        when(exception.getValue()).thenReturn("invalid-uuid");
+        when(exception.getName()).thenReturn("accountId");
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentTypeMismatch(exception);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Invalid value 'invalid-uuid' for parameter 'accountId'", response.getBody().message());
+        assertEquals("VALIDATION_ERROR", response.getBody().errorCode());
+        assertEquals(400, response.getBody().status());
+        assertNotNull(response.getBody().timestamp());
     }
 }

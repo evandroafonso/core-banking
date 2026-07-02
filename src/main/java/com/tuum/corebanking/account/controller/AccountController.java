@@ -6,10 +6,9 @@ import com.tuum.corebanking.account.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -25,6 +24,12 @@ public class AccountController {
     public ResponseEntity<AccountResponse> create(@RequestBody @Valid AccountRequest accountRequest) {
         AccountResponse savedAccount = accountService.create(accountRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedAccount);
+    }
+
+    @GetMapping("/{accountId}")
+    public ResponseEntity<AccountResponse> findById(@PathVariable UUID accountId) {
+        AccountResponse accountResponse = accountService.findById(accountId);
+        return ResponseEntity.ok(accountResponse);
     }
 
 }

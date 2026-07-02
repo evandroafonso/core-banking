@@ -9,6 +9,7 @@ import com.tuum.corebanking.account.model.Account;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
+import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InvalidCurrencyException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import org.junit.jupiter.api.Test;
@@ -20,11 +21,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.Arrays;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -115,5 +117,80 @@ class AccountServiceTest {
         verify(accountMapper, never()).insert(any());
         verify(balanceService, never()).create(any(), any());
         verify(applicationEventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void findByIdSuccessfully() {
+        UUID accountId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        Long internalId = 1L;
+
+        Account account = new Account();
+        account.setId(internalId);
+
+        List<BalanceResponse> balancesResponse = List.of(new BalanceResponse(BigDecimal.ZERO, Currency.EUR));
+        AccountResponse expectedResponse = new AccountResponse(accountId, customerId, balancesResponse);
+
+        when(accountMapper.findByBusinessId(accountId)).thenReturn(Optional.of(account));
+        when(balanceService.findByAccountId(internalId)).thenReturn(balancesResponse);
+        when(accountConverter.toResponse(account, balancesResponse)).thenReturn(expectedResponse);
+
+        AccountResponse actualResponse = accountService.findById(accountId);
+
+        assertNotNull(actualResponse);
+        assertEquals(expectedResponse, actualResponse);
+
+        verify(accountMapper).findByBusinessId(accountId);
+        verify(balanceService).findByAccountId(internalId);
+        verify(accountConverter).toResponse(account, balancesResponse);
+    }
+
+    @Test
+    void findByIdThrowsAccountNotFoundExceptionWhenAccountDoesNotExist() {
+        UUID accountId = UUID.randomUUID();
+
+        when(accountMapper.findByBusinessId(accountId)).thenReturn(Optional.empty());
+
+        assertThrows(AccountNotFoundException.class, () -> accountService.findById(accountId));
+
+        verify(accountMapper).findByBusinessId(accountId);
+        verifyNoInteractions(balanceService);
+        verifyNoInteractions(accountConverter);
+    }
+
+    @Test
+    void findByIdThrowsExceptionWhenBalanceServiceFails() {
+        UUID accountId = UUID.randomUUID();
+        Long internalId = 1L;
+        Account account = new Account();
+        account.setId(internalId);
+
+        when(accountMapper.findByBusinessId(accountId)).thenReturn(Optional.of(account));
+        when(balanceService.findByAccountId(internalId)).thenThrow(new RuntimeException("Service error"));
+
+        assertThrows(RuntimeException.class, () -> accountService.findById(accountId));
+
+        verify(accountMapper).findByBusinessId(accountId);
+        verify(balanceService).findByAccountId(internalId);
+        verifyNoInteractions(accountConverter);
+    }
+
+    @Test
+    void findByIdThrowsExceptionWhenConverterFails() {
+        UUID accountId = UUID.randomUUID();
+        Long internalId = 1L;
+        Account account = new Account();
+        account.setId(internalId);
+        List<BalanceResponse> balancesResponse = Collections.emptyList();
+
+        when(accountMapper.findByBusinessId(accountId)).thenReturn(Optional.of(account));
+        when(balanceService.findByAccountId(internalId)).thenReturn(balancesResponse);
+        when(accountConverter.toResponse(account, balancesResponse)).thenThrow(new RuntimeException("Converter error"));
+
+        assertThrows(RuntimeException.class, () -> accountService.findById(accountId));
+
+        verify(accountMapper).findByBusinessId(accountId);
+        verify(balanceService).findByAccountId(internalId);
+        verify(accountConverter).toResponse(account, balancesResponse);
     }
 }

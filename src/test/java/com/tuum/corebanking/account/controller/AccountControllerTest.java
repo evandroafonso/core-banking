@@ -6,6 +6,8 @@ import com.tuum.corebanking.account.dto.response.AccountResponse;
 import com.tuum.corebanking.account.service.AccountService;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
+import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.handler.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,11 +22,12 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AccountController.class)
+@WebMvcTest({AccountController.class, GlobalExceptionHandler.class})
 class AccountControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -94,4 +97,48 @@ class AccountControllerTest {
 
         verify(accountService, never()).create(any());
     }
+
+
+    @Test
+    void findByIdSuccessfully() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        List<BalanceResponse> balances = List.of(new BalanceResponse(BigDecimal.ZERO, Currency.EUR));
+        AccountResponse accountResponse = new AccountResponse(accountId, customerId, balances);
+
+        when(accountService.findById(accountId)).thenReturn(accountResponse);
+
+        mockMvc.perform(get("/api/accounts/" + accountId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(accountId.toString()))
+                .andExpect(jsonPath("$.customerId").value(customerId.toString()))
+                .andExpect(jsonPath("$.balances[0].currency").value("EUR"))
+                .andExpect(jsonPath("$.balances[0].balance").value(0));
+
+        verify(accountService).findById(accountId);
+    }
+
+    @Test
+    void findByIdReturnsNotFoundWhenAccountDoesNotExist() throws Exception {
+        UUID accountId = UUID.randomUUID();
+
+        when(accountService.findById(accountId)).thenThrow(new AccountNotFoundException("Account not found with id: " + accountId));
+
+        mockMvc.perform(get("/api/accounts/" + accountId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        verify(accountService).findById(accountId);
+    }
+
+    @Test
+    void findByIdReturnsBadRequestWhenIdIsInvalidUuid() throws Exception {
+        mockMvc.perform(get("/api/accounts/invalid-uuid")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(accountService);
+    }
+
 }

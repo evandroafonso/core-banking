@@ -5,8 +5,8 @@ CREATE TABLE balances
     account_id  BIGINT         NOT NULL,
     currency    VARCHAR(3)     NOT NULL,
     balance     NUMERIC(20, 8) NOT NULL DEFAULT 0,
-    created_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
+    created_at  TIMESTAMP      NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMP      NOT NULL DEFAULT now(),
     CONSTRAINT uq_account_currency UNIQUE (account_id, currency),
 
     CONSTRAINT fk_balances_accounts FOREIGN KEY (account_id) REFERENCES accounts (id)
