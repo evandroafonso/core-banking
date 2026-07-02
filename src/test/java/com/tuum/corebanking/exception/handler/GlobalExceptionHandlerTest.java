@@ -194,7 +194,7 @@ class GlobalExceptionHandlerTest {
 
         when(reference.getDescription()).thenReturn("count");
         when(cause.getPath()).thenReturn(List.of(reference));
-        when(cause.getTargetType()).thenReturn((Class) int.class); // tipo primitivo
+        when(cause.getTargetType()).thenReturn((Class) int.class);
         when(cause.getValue()).thenReturn("abc");
 
         HttpMessageNotReadableException ex = new HttpMessageNotReadableException("Msg", cause, null);

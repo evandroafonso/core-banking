@@ -15,8 +15,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DirectionParserTest {
 
-    // Testes para casos válidos
-
     private static Stream<Arguments> provideValidDirectionStrings() {
         return Stream.of(
                 Arguments.of("IN", Direction.IN),
@@ -80,8 +78,6 @@ class DirectionParserTest {
         assertThat(result).isEqualTo(Direction.OUT);
     }
 
-    // Testes para casos inválidos
-
     @ParameterizedTest
     @ValueSource(strings = {"INVALID", "INPUT", "OUTPUT", "INOUT", "OUTIN", "ABC", "XYZ", "123", "INN", "OUTT"})
     void parseShouldThrowInvalidTransactionDirectionExceptionWhenInvalidString(String invalidDirection) {
@@ -134,9 +130,7 @@ class DirectionParserTest {
                 .hasMessageContaining("IN")
                 .hasMessageContaining("OUT");
     }
-
-    // Testes de borda e consistência
-
+    
     @Test
     void parseShouldBeCaseInsensitiveForIN() {
         String[] validInputs = {"IN", "In", "iN", "in"};
@@ -174,7 +168,6 @@ class DirectionParserTest {
 
     @Test
     void parseShouldHandleOnlyTwoPossibleValues() {
-        // Verifica que o enum Direction tem exatamente 2 valores
         Direction[] directions = Direction.values();
         assertThat(directions).hasSize(2);
         assertThat(directions).contains(Direction.IN, Direction.OUT);

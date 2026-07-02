@@ -18,8 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CurrencyParserTest {
 
-    // Testes para o método parse(String raw)
-
     private static Stream<Arguments> provideValidCurrencyStrings() {
         return Stream.of(
                 Arguments.of("EUR", Currency.EUR),
@@ -66,8 +64,6 @@ class CurrencyParserTest {
                     }
                 });
     }
-
-    // Testes para o método parseList(List<String> rawValues)
 
     @Test
     void parseListShouldReturnCurrenciesWhenAllValid() {

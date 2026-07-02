@@ -53,8 +53,6 @@ class EnumParserTest {
         assertThat(result).isEqualTo(TestEnum.VALUE1);
     }
 
-    // Testes para o método parse()
-
     @Test
     void parseShouldHandleLowerCaseInput() {
         Function<String, RuntimeException> exceptionSupplier =
@@ -163,8 +161,6 @@ class EnumParserTest {
                 .hasSize(1)
                 .isEqualTo(expected);
     }
-
-    // Testes para o método parseList()
 
     @Test
     void parseListShouldThrowExceptionWhenAnyElementIsInvalid() {
@@ -290,8 +286,6 @@ class EnumParserTest {
         }
     }
 
-    // Testes para o método acceptedValues()
-
     @Test
     void acceptedValuesShouldContainAllSizes() {
         String result = EnumParser.acceptedValues(Size.class);
@@ -320,7 +314,6 @@ class EnumParserTest {
     void parseAndAcceptedValuesShouldBeConsistent() {
         String acceptedValues = EnumParser.acceptedValues(TestEnum.class);
 
-        // Verifica que cada valor aceito pode ser parseado
         for (TestEnum value : TestEnum.values()) {
             Function<String, RuntimeException> exceptionSupplier =
                     val -> new IllegalArgumentException("Invalid: " + val);
@@ -328,7 +321,6 @@ class EnumParserTest {
             TestEnum parsed = EnumParser.parse(value.name(), TestEnum.class, exceptionSupplier);
             assertThat(parsed).isEqualTo(value);
 
-            // Verifica que o valor está na lista de aceitos
             assertThat(acceptedValues).contains(value.name());
         }
     }
@@ -359,8 +351,6 @@ class EnumParserTest {
                 .hasStackTraceContaining("EnumParser.parse");
     }
 
-    // Testes de integração entre os métodos
-
     @Test
     void parseShouldBeThreadSafe() throws InterruptedException {
         Function<String, RuntimeException> exceptionSupplier =
@@ -384,7 +374,6 @@ class EnumParserTest {
         thread3.join();
     }
 
-    // Enum de exemplo para testes
     private enum TestEnum {
         VALUE1, VALUE2, VALUE3
     }
