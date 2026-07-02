@@ -25,7 +25,7 @@ class BalanceConverterTest {
         assertThat(result).extracting(Balance::getCurrency).containsExactlyInAnyOrder(Currency.EUR, Currency.USD);
         assertThat(result).allSatisfy(balance -> {
             assertThat(balance.getAccountId()).isEqualTo(accountId);
-            assertThat(balance.getBalance()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(balance.getAvailableAmount()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(balance.getBusinessId()).isNotNull();
             assertThat(balance.getCreatedAt()).isNotNull();
             assertThat(balance.getUpdatedAt()).isNotNull();
@@ -36,11 +36,11 @@ class BalanceConverterTest {
     void toResponsesShouldMapBalancesToResponses() {
         Balance b1 = Balance.builder()
                 .currency(Currency.EUR)
-                .balance(new BigDecimal("100.00"))
+                .availableAmount(new BigDecimal("100.00"))
                 .build();
         Balance b2 = Balance.builder()
                 .currency(Currency.USD)
-                .balance(new BigDecimal("50.00"))
+                .availableAmount(new BigDecimal("50.00"))
                 .build();
         List<Balance> balances = List.of(b1, b2);
 
@@ -49,5 +49,8 @@ class BalanceConverterTest {
         assertThat(responses).hasSize(2);
         assertThat(responses).extracting(BalanceResponse::currency)
                 .containsExactlyInAnyOrder(Currency.EUR, Currency.USD);
+        assertThat(responses).extracting(BalanceResponse::balance)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactlyInAnyOrder(new BigDecimal("100"), new BigDecimal("50"));
     }
 }

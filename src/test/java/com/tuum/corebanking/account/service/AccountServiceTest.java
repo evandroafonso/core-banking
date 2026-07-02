@@ -98,7 +98,7 @@ class AccountServiceTest {
 
         accountService.create(request);
 
-        verify(balanceService).create(List.of(Currency.EUR, Currency.USD), 200L);
+        verify(balanceService).create(List.of(Currency.EUR, Currency.EUR, Currency.USD, Currency.USD), 200L);
     }
 
     @Test

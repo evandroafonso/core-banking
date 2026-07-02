@@ -1,29 +1,30 @@
 package com.tuum.corebanking.transaction.service;
 
 import com.tuum.corebanking.account.service.AccountService;
-import com.tuum.corebanking.balance.mapper.BalanceMapper;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
+import com.tuum.corebanking.balance.service.BalanceService;
 import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.common.util.DirectionParser;
 import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InsufficientFundsException;
 import com.tuum.corebanking.exception.InvalidTransactionAmountException;
-import com.tuum.corebanking.messaging.publisher.EventPublisher;
+import com.tuum.corebanking.messaging.event.OperationType;
 import com.tuum.corebanking.transaction.converter.TransactionConverter;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
 import com.tuum.corebanking.transaction.dto.response.TransactionResponse;
+import com.tuum.corebanking.transaction.event.TransactionEvent;
 import com.tuum.corebanking.transaction.mapper.TransactionMapper;
 import com.tuum.corebanking.transaction.model.Direction;
 import com.tuum.corebanking.transaction.model.Transaction;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +33,8 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
     private final TransactionConverter transactionConverter;
     private final AccountService accountService;
-    private final BalanceMapper balanceMapper;
-    private final EventPublisher eventPublisher;
+    private final BalanceService balanceService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public TransactionResponse create(UUID accountBusinessId, TransactionRequest request) {
@@ -47,7 +48,7 @@ public class TransactionService {
 
         BigDecimal balanceAfter = calculateNewBalance(balance, request.amount(), direction);
 
-        updateBalance(balance.getId(), balanceAfter);
+        updateBalance(balance, balanceAfter);
         Transaction transaction = save(request, balance.getAccountId(), balanceAfter, currency, direction);
 
         TransactionResponse response = transactionConverter.toResponse(transaction, accountBusinessId);
@@ -63,12 +64,7 @@ public class TransactionService {
     }
 
     private Balance findBalanceWithLock(Long accountId, UUID accountBusinessId, Currency currency) {
-        return balanceMapper
-                .findByAccountIdAndCurrencyForUpdate(accountId, currency)
-                .orElseThrow(() -> new AccountNotFoundException(
-                        "No balance found for account %s with currency %s"
-                                .formatted(accountBusinessId, currency)
-                ));
+        return balanceService.findBalanceWithLock(accountId, accountBusinessId, currency);
     }
 
     private BigDecimal calculateNewBalance(Balance balance, BigDecimal amount, Direction direction) {
@@ -83,11 +79,8 @@ public class TransactionService {
         return newBalance;
     }
 
-    private void updateBalance(Long balanceId, BigDecimal balanceAfter) {
-        int rowsAffected = balanceMapper.updateAvailableAmount(balanceId, balanceAfter);
-        if (rowsAffected == 0) {
-            throw new IllegalStateException("Failed to update balance, no rows affected for id: %s".formatted(balanceId));
-        }
+    private void updateBalance(Balance balance, BigDecimal balanceAfter) {
+        balanceService.update(balance, balanceAfter);
     }
 
     private Transaction save(TransactionRequest request, Long accountId, BigDecimal balanceAfter,
@@ -98,7 +91,12 @@ public class TransactionService {
     }
 
     private void publishEvent(TransactionResponse response) {
-        // eventPublisher.publish(TransactionEvent.created(response));
+        TransactionEvent event = new TransactionEvent(
+                "TransactionCreated",
+                OperationType.INSERT,
+                response
+        );
+        applicationEventPublisher.publishEvent(event);
     }
 
     public List<TransactionResponse> findByAccountId(UUID accountBusinessId) {

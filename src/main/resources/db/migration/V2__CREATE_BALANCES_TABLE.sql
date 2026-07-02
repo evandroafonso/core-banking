@@ -7,7 +7,6 @@ CREATE TABLE balances
     available_amount NUMERIC(20, 8) NOT NULL DEFAULT 0,
     created_at       TIMESTAMP      NOT NULL DEFAULT now(),
     updated_at       TIMESTAMP      NOT NULL DEFAULT now(),
-    CONSTRAINT uq_account_currency UNIQUE (account_id, currency),
 
     CONSTRAINT fk_balances_accounts FOREIGN KEY (account_id) REFERENCES accounts (id)
 );
