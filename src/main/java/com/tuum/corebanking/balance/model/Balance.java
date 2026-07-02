@@ -18,6 +18,6 @@ public class Balance extends BaseEntity {
 
     private Long accountId;
     private Currency currency;
-    private BigDecimal availableAmount = BigDecimal.ZERO;
+    private BigDecimal availableAmount;
 
 }

@@ -1,6 +1,7 @@
 package com.tuum.corebanking.account;
 
 import com.tuum.corebanking.IntegrationTestBase;
+import tools.jackson.databind.ObjectMapper;
 import com.tuum.corebanking.account.dto.request.AccountRequest;
 import com.tuum.corebanking.account.mapper.AccountMapper;
 import com.tuum.corebanking.account.model.Account;
@@ -15,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -73,7 +74,7 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.balances", hasSize(2)))
                 .andReturn().getResponse().getContentAsString();
 
-        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asString());
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
 
         Account persisted = accountMapper.findByBusinessId(accountId).orElseThrow();
         assertThat(persisted.getCountry()).isEqualTo("EE");
@@ -100,18 +101,12 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asString());
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
 
         mockMvc.perform(get("/api/accounts/{id}", accountId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(accountId.toString()))
                 .andExpect(jsonPath("$.balances[0].currency").value("EUR"));
-    }
-
-    @Test
-    void shouldReturn404_whenAccountNotFound() throws Exception {
-        mockMvc.perform(get("/api/accounts/{id}", UUID.randomUUID()))
-                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -143,4 +138,143 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .hasMessage("Account not found with id: %s".formatted(randomId));
     }
 
-}
+    @Test
+    void shouldReturn404_whenAccountNotFound() throws Exception {
+        mockMvc.perform(get("/api/accounts/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value(containsString("Account not found")));
+    }
+
+    @Test
+    void shouldReturn400ForMalformedJson() throws Exception {
+        mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void shouldReturn400ForInvalidUUIDFormat() throws Exception {
+        mockMvc.perform(get("/api/accounts/{id}", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(containsString("Invalid value 'abc'")));
+    }
+
+    @Test
+    void shouldReturn400ForInvalidCurrency() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        AccountRequest accountRequest = new AccountRequest(customerId, "EE", List.of("EUR"));
+
+        String responseBody = mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(accountRequest)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
+
+        String transactionJson = """
+                {
+                    "amount": 100.00,
+                    "currency": "INVALID",
+                    "direction": "IN",
+                    "description": "Test transaction"
+                }
+                """;
+
+        mockMvc.perform(post("/api/accounts/{accountId}/transactions", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(transactionJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_CURRENCY"))
+                .andExpect(jsonPath("$.message").value(containsString("Invalid currency")))
+                .andExpect(jsonPath("$.message").value(containsString("INVALID")));
+    }
+
+    @Test
+    void shouldReturn400ForInvalidTransactionDirection() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        AccountRequest accountRequest = new AccountRequest(customerId, "EE", List.of("EUR"));
+
+        String responseBody = mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(accountRequest)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
+
+        String transactionJson = """
+                {
+                    "amount": 100.00,
+                    "currency": "EUR",
+                    "direction": "INVALID",
+                    "description": "Test transaction"
+                }
+                """;
+
+        mockMvc.perform(post("/api/accounts/{accountId}/transactions", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(transactionJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_TRANSACTION_DIRECTION"))
+                .andExpect(jsonPath("$.message").value(containsString("Invalid direction")))
+                .andExpect(jsonPath("$.message").value(containsString("INVALID")));
+    }
+
+    @Test
+    void shouldReturn400ForInvalidCurrencyInAccountCreation() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        AccountRequest invalidRequest = new AccountRequest(customerId, "EE", List.of("INVALID"));
+
+        mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_CURRENCY"))
+                .andExpect(jsonPath("$.message").value(containsString("Invalid currency")))
+                .andExpect(jsonPath("$.message").value(containsString("INVALID")));
+    }
+
+    @Test
+    void shouldReturn400ForTransactionWithNonExistentCurrencyBalance() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        AccountRequest accountRequest = new AccountRequest(customerId, "EE", List.of("EUR"));
+
+        String responseBody = mockMvc.perform(post("/api/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(accountRequest)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        UUID accountId = UUID.fromString(objectMapper.readTree(responseBody).get("id").asText());
+
+        String transactionJson = """
+                {
+                    "amount": 100.00,
+                    "currency": "USD",
+                    "direction": "IN",
+                    "description": "Test transaction"
+                }
+                """;
+
+        mockMvc.perform(post("/api/accounts/{accountId}/transactions", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(transactionJson))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value(containsString("No balance found")))
+                .andExpect(jsonPath("$.message").value(containsString("USD")));
+    }
+
+    @Test
+    void shouldReturn404ForNonExistentEndpoint() throws Exception {
+        mockMvc.perform(get("/api/nonexistent"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
+    }
+
+}   

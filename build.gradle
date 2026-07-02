@@ -84,18 +84,21 @@ tasks.register('integrationTest', Test) {
     shouldRunAfter test
 }
 
-// Configuração do JaCoCo para testes unitários
 jacoco {
     toolVersion = "0.8.12"
 }
 
-// Relatório apenas para testes unitários
 jacocoTestReport {
-    dependsOn test // Depende apenas de test, não de integrationTest
+    description = 'Generates JaCoCo report for unit tests only.'
+    group = 'verification'
+    dependsOn test
 
     executionData.from = files(
             layout.buildDirectory.file("jacoco/test.exec")
     )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
 
     reports {
         xml.required = true
@@ -103,11 +106,27 @@ jacocoTestReport {
     }
 }
 
-// Relatório combinado (unitários + integração)
+tasks.register('jacocoIntegrationTestReport', JacocoReport) {
+    description = 'Generates JaCoCo report for integration tests only.'
+    group = 'verification'
+    dependsOn integrationTest
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/integrationTest.exec")
+    )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
 tasks.register('jacocoCombinedReport', JacocoReport) {
     description = 'Generates combined JaCoCo report for unit and integration tests.'
     group = 'verification'
-
     dependsOn test, integrationTest
 
     executionData.from = files(
@@ -124,13 +143,17 @@ tasks.register('jacocoCombinedReport', JacocoReport) {
     }
 }
 
-// Verificação de cobertura apenas para testes unitários
 jacocoTestCoverageVerification {
+    description = 'Verifies coverage for unit tests only.'
+    group = 'verification'
     dependsOn jacocoTestReport
 
     executionData.from = files(
             layout.buildDirectory.file("jacoco/test.exec")
     )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
 
     violationRules {
         rule {
@@ -141,11 +164,30 @@ jacocoTestCoverageVerification {
     }
 }
 
-// Verificação de cobertura combinada
+tasks.register('jacocoIntegrationTestCoverageVerification', JacocoCoverageVerification) {
+    description = 'Verifies coverage for integration tests only.'
+    group = 'verification'
+    dependsOn jacocoIntegrationTestReport
+
+    executionData.from = files(
+            layout.buildDirectory.file("jacoco/integrationTest.exec")
+    )
+
+    sourceDirectories.from = files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from = files(sourceSets.main.output)
+
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+
 tasks.register('jacocoCombinedCoverageVerification', JacocoCoverageVerification) {
     description = 'Verifies combined coverage for unit and integration tests.'
     group = 'verification'
-
     dependsOn jacocoCombinedReport
 
     executionData.from = files(
@@ -165,14 +207,12 @@ tasks.register('jacocoCombinedCoverageVerification', JacocoCoverageVerification)
     }
 }
 
-// FinalizedBy apenas para test
 test {
     finalizedBy jacocoTestReport
 }
 
 integrationTest {
-    finalizedBy jacocoCombinedReport
+    finalizedBy jacocoIntegrationTestReport
 }
 
-// check depende de ambos
-check.dependsOn integrationTest, jacocoTestCoverageVerification, jacocoCombinedCoverageVerification
+check.dependsOn integrationTest, jacocoTestCoverageVerification, jacocoIntegrationTestCoverageVerification, jacocoCombinedCoverageVerification
