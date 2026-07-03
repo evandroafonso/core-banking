@@ -100,7 +100,7 @@ The Postman collection is attached in the project root folder - `core-banking.po
 
 ### Create Account
 
-```http
+```bash
 curl --location 'http://localhost:8080/api/accounts' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -112,13 +112,13 @@ curl --location 'http://localhost:8080/api/accounts' \
 
 ### Get Account
 
-```http
+```bash
 curl --location 'http://localhost:8080/api/accounts/0ff90499-6576-4573-bf0a-684967ef9436'
 ```
 
 ### Create Transaction
 
-```http
+```bash
 curl --location 'http://localhost:8080/api/accounts/0ff90499-6576-4573-bf0a-684967ef9436/transactions' \
 --header 'Content-Type: application/json' \
 --data '{
@@ -131,7 +131,7 @@ curl --location 'http://localhost:8080/api/accounts/0ff90499-6576-4573-bf0a-6849
 
 ### Get Transactions
 
-```http
+```bash
 curl --location 'http://localhost:8080/api/accounts/0ff90499-6576-4573-bf0a-684967ef9436/transactions'
 ```
 
