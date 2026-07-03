@@ -2,9 +2,9 @@ package com.tuum.corebanking.transaction.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuum.corebanking.balance.model.Currency;
+import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.exception.handler.GlobalExceptionHandler;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
-import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.transaction.dto.response.TransactionResponse;
 import com.tuum.corebanking.transaction.model.Direction;
 import com.tuum.corebanking.transaction.service.TransactionService;
@@ -19,9 +19,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.intThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -100,11 +98,13 @@ class TransactionControllerTest {
                 BigDecimal.valueOf(1100.00)
         );
         List<TransactionResponse> responseList = List.of(transactionResponse);
-        PageResponse<TransactionResponse> pageResponse = new PageResponse<>(responseList, 0, 10, 1);
+        PageResponse<TransactionResponse> pageResponse = new PageResponse<>(responseList, 0, 100, 1);
 
-        when(transactionService.findByAccountId(eq(accountId), intThat(i -> i == 0), intThat(i -> i == 10))).thenReturn(pageResponse);
+        when(transactionService.findByAccountId(eq(accountId), eq(0), eq(100))).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/accounts/" + accountId + "/transactions")
+                        .param("page", "0")
+                        .param("size", "100")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].accountId").value(accountId.toString()))
@@ -115,11 +115,11 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.data[0].description").value("Coffee"))
                 .andExpect(jsonPath("$.data[0].balanceAfter").value(1100.00))
                 .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.size").value(100))
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.totalPages").value(1));
 
-        verify(transactionService).findByAccountId(eq(accountId), intThat(i -> i == 0), intThat(i -> i == 10));
+        verify(transactionService).findByAccountId(eq(accountId), eq(0), eq(100));
     }
 
     @Test

@@ -44,8 +44,8 @@ password: password
 
 Run unit tests:
 
-1. Open the root folder `/core-banking`
-2. Run the commands bellow for:
+1. Open a terminal in the root folder `/core-banking`
+2. Copy, paste and run the commands bellow for:
 
 **Unit tests:**
 
