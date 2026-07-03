@@ -41,9 +41,9 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse create(UUID accountBusinessId, TransactionRequest request) {
-        log.info("Creating transaction for account: {}, amount: {}, currency: {}, direction: {}", 
+        log.info("Creating transaction for account: {}, amount: {}, currency: {}, direction: {}",
                 accountBusinessId, request.amount(), request.currency(), request.direction());
-        
+
         validateAmount(request.amount());
 
         Currency currency = CurrencyParser.parse(request.currency());
@@ -81,7 +81,7 @@ public class TransactionService {
                 : balance.getAvailableAmount().subtract(amount);
 
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            log.warn("Insufficient funds for account: {}. Available: {}, requested: {}", 
+            log.warn("Insufficient funds for account: {}. Available: {}, requested: {}",
                     balance.getAccountId(), balance.getAvailableAmount(), amount);
             throw new InsufficientFundsException(amount, balance.getAvailableAmount());
         }
@@ -115,14 +115,14 @@ public class TransactionService {
         int offset = page * size;
         List<Transaction> transactions = transactionMapper.findByAccountId(accountId, offset, size);
         long totalElements = transactionMapper.countByAccountId(accountId);
-        
+
         if (transactions.isEmpty() && totalElements == 0) {
             log.warn("No transactions found for account ID: {}", accountId);
             throw new AccountNotFoundException(String.valueOf(accountId));
         }
-        
+
         List<TransactionResponse> responses = transactionConverter.toResponses(transactions, accountBusinessId);
-        log.debug("Found {} transactions for account: {}", responses.size(), accountBusinessId);
+        log.info("Found {} transactions for account: {}", responses.size(), accountBusinessId);
         return new PageResponse<>(responses, page, size, totalElements);
     }
 }

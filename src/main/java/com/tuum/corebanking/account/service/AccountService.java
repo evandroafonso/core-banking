@@ -66,7 +66,7 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountId)));
         List<BalanceResponse> balancesResponse = balanceService.findByAccountId(account.getId());
 
-        log.debug("Account found: {}", account.getBusinessId());
+        log.info("Account found: {}", account.getBusinessId());
         return accountConverter.toResponse(account, balancesResponse);
     }
 

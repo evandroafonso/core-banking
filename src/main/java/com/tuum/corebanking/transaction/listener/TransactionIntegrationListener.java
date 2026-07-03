@@ -21,9 +21,9 @@ public class TransactionIntegrationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async("eventPublisherExecutor")
     public void handleTransactionCreatedEvent(TransactionEvent event) {
-        log.info("Handling TransactionCreatedEvent for transaction ID: {}", event.payload().transactionId());
+        log.debug("Handling TransactionCreatedEvent for transaction ID: {}", event.payload().transactionId());
         String routingKey = "transaction.%s".formatted(event.operationType().name().toLowerCase());
         eventPublisher.publish(routingKey, event);
-        log.debug("TransactionEvent published with routing key: {}", routingKey);
+        log.info("TransactionEvent published with routing key: {}, trasactionId: {}", routingKey, event.payload().transactionId());
     }
 }
