@@ -22,7 +22,7 @@ publishing.
 
 ### Local Development
 
-1. Download or clone this project in your machine
+1. Download or clone this repository in your machine
 2. Open the root folder `/core-banking`
 3. And start PostgreSQL, RabbitMQ and the application with Docker Compose running this command:
 
@@ -154,15 +154,15 @@ Flyway runs automatically on application startup, so no manual initialization sc
 
 #### Class diagram
 
-![alt text](core-banking-class-diagram.jpg)
+![alt text](readme-images/core-banking-class-diagram.jpg)
 
 #### Database diagram
 
-![alt text](core-banking-database-diagram.jpg)
+![alt text](readme-images/core-banking-database-diagram.jpg)
 
 #### Architecture diagram
 
-![alt text](core-banking-architecture-diagram.jpg)
+![alt text](readme-images/core-banking-architecture-diagram.jpg)
 
 ### Domain-Driven Design
 
