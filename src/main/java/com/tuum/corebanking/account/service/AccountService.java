@@ -34,9 +34,9 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(AccountRequest request) {
-        log.info("Creating account with customer ID: {}, country: {}, currencies: {}", 
+        log.info("Creating account with customer ID: {}, country: {}, currencies: {}",
                 request.customerId(), request.country(), request.currencies());
-        
+
         List<Currency> currencies = CurrencyParser.parseList(request.currencies());
 
         Account account = accountConverter.toEntity(request);
@@ -75,7 +75,7 @@ public class AccountService {
         log.debug("Finding account ID by business ID: {}", accountBusinessId);
         Long accountId = accountMapper.findAccountIdByBusinessId(accountBusinessId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));
-        log.debug("Account ID found: {} for business ID: {}", accountId, accountBusinessId);
+        log.info("Account ID found: {} for business ID: {}", accountId, accountBusinessId);
         return accountId;
     }
 }

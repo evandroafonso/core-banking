@@ -160,6 +160,22 @@ The application uses Flyway for database schema management. Migration scripts ar
 
 Flyway runs automatically on application startup, so no manual initialization scripts are needed in Docker.
 
+### Seed Data for Testing
+
+The seed migrations (V5-V7) populate the database with sample data for testing:
+
+- **2 accounts** with the following business IDs:
+    - `b3d1c1c2-7c1a-4f3b-9a6f-1a2b3c4d5e6f` (customer: `1ef1732f-894d-42ff-b5f9-7ae05f42b89e`)
+    - `d4e2f2a3-8b2c-4d5e-9f6a-2b3c4d5e6f7a` (customer: `5b21efc2-2965-44d0-8f00-8637cb7ddb23`)
+
+- **Balances**: Each account has balances in EUR, SEK, and USD. The first account has an initial USD balance of 1017.37.
+
+- **11 transactions**: All IN transactions in USD for the first account, totaling 1017.37 USD.
+
+You can use these business IDs to test the API endpoints or create a new one from scratch using the postman collection
+`core-banking.postman-collection.json`
+attached in this repository.
+
 ## Architectural and Implementation Choices
 
 ### Diagrams:
