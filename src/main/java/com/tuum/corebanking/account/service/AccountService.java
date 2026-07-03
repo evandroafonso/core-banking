@@ -13,6 +13,7 @@ import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -32,6 +34,9 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(AccountRequest request) {
+        log.info("Creating account with customer ID: {}, country: {}, currencies: {}", 
+                request.customerId(), request.country(), request.currencies());
+        
         List<Currency> currencies = CurrencyParser.parseList(request.currencies());
 
         Account account = accountConverter.toEntity(request);
@@ -42,6 +47,7 @@ public class AccountService {
         AccountResponse accountResponse = accountConverter.toResponse(account, balances);
 
         publishEvent(accountResponse);
+        log.info("Account created successfully with ID: {}, business ID: {}", account.getId(), account.getBusinessId());
         return accountResponse;
     }
 
@@ -55,16 +61,21 @@ public class AccountService {
     }
 
     public AccountResponse findById(UUID accountId) {
+        log.debug("Finding account by business ID: {}", accountId);
         Account account = accountMapper.findByBusinessId(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountId)));
         List<BalanceResponse> balancesResponse = balanceService.findByAccountId(account.getId());
 
+        log.debug("Account found: {}", account.getBusinessId());
         return accountConverter.toResponse(account, balancesResponse);
     }
 
     @Cacheable(cacheNames = "accountIds", key = "#accountBusinessId")
     public Long findAccountIdByBusinessId(UUID accountBusinessId) {
-        return accountMapper.findAccountIdByBusinessId(accountBusinessId)
+        log.debug("Finding account ID by business ID: {}", accountBusinessId);
+        Long accountId = accountMapper.findAccountIdByBusinessId(accountBusinessId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));
+        log.debug("Account ID found: {} for business ID: {}", accountId, accountBusinessId);
+        return accountId;
     }
 }
