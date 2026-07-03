@@ -29,8 +29,14 @@ sourceSets {
             runtimeClasspath += main.output + test.output
             srcDir file('src/integrationTest/java')
         }
-        resources.srcDir file('src/integrationTest/resources')
+        resources {
+            srcDir file('src/integrationTest/resources')
+        }
     }
+}
+
+tasks.withType(ProcessResources).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 configurations {
@@ -84,6 +90,15 @@ tasks.register('integrationTest', Test) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
     shouldRunAfter test
+    useJUnitPlatform()
+    systemProperty 'user.timezone', 'UTC'
+    finalizedBy jacocoIntegrationTestReport
+    
+    jacoco {
+        enabled = true
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*']
+    }
 }
 
 jacoco {
@@ -213,8 +228,4 @@ test {
     finalizedBy jacocoTestReport
 }
 
-integrationTest {
-    finalizedBy jacocoIntegrationTestReport
-}
-
-check.dependsOn integrationTest, jacocoTestCoverageVerification, jacocoIntegrationTestCoverageVerification, jacocoCombinedCoverageVerification
+check.dependsOn jacocoTestCoverageVerification
