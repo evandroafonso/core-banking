@@ -1,12 +1,11 @@
 package com.tuum.corebanking.account;
 
 import com.tuum.corebanking.IntegrationTestBase;
-import tools.jackson.databind.ObjectMapper;
 import com.tuum.corebanking.account.dto.request.AccountRequest;
 import com.tuum.corebanking.account.mapper.AccountMapper;
 import com.tuum.corebanking.account.model.Account;
 import com.tuum.corebanking.account.service.AccountService;
-import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -16,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -134,7 +134,7 @@ class AccountIntegrationTest extends IntegrationTestBase {
         UUID randomId = UUID.randomUUID();
 
         assertThatThrownBy(() -> accountService.findAccountIdByBusinessId(randomId))
-                .isInstanceOf(AccountNotFoundException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Account not found with id: %s".formatted(randomId));
     }
 
@@ -268,13 +268,6 @@ class AccountIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(containsString("No balance found")))
                 .andExpect(jsonPath("$.message").value(containsString("USD")));
-    }
-
-    @Test
-    void shouldReturn404ForNonExistentEndpoint() throws Exception {
-        mockMvc.perform(get("/api/nonexistent"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
     }
 
 }   

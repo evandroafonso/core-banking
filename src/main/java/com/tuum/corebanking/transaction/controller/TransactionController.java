@@ -40,7 +40,8 @@ public class TransactionController {
             @RequestParam(defaultValue = "100") int size) {
         log.info("Received request to find transactions for account: {}, page: {}, size: {}", accountId, page, size);
         PageResponse<TransactionResponse> response = transactionService.findByAccountId(accountId, page, size);
-        log.debug("Found {} transactions for account: {}", response.data().size(), accountId);
+        log.info("Returning {} transactions for account: {} (page: {}, total: {})",
+                response.data().size(), accountId, page, response.totalElements());
         return ResponseEntity.ok(response);
     }
 }

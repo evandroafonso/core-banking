@@ -7,7 +7,7 @@ import com.tuum.corebanking.balance.event.BalanceUpdateEvent;
 import com.tuum.corebanking.balance.mapper.BalanceMapper;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
-import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class BalanceService {
     private final BalanceMapper balanceMapper;
     private final BalanceConverter balanceConverter;
     private final ApplicationEventPublisher applicationEventPublisher;
-    
+
     @Transactional
     public List<BalanceResponse> create(List<Currency> currencies, Long accountId) {
         log.info("Creating balances for account ID: {} with currencies: {}", accountId, currencies);
@@ -42,6 +42,7 @@ public class BalanceService {
     public List<BalanceResponse> findByAccountId(Long accountId) {
         log.debug("Finding balances for account ID: {}", accountId);
         List<Balance> balances = balanceMapper.findByAccountId(accountId);
+        log.info("Found {} balances for account ID: {}", balances.size(), accountId);
         return balanceConverter.toResponses(balances);
     }
 
@@ -50,7 +51,7 @@ public class BalanceService {
         log.debug("Finding balance with lock for account ID: {}, business ID: {}, currency: {}", accountId, accountBusinessId, currency);
         return balanceMapper
                 .findByAccountIdAndCurrencyForUpdate(accountId, currency)
-                .orElseThrow(() -> new AccountNotFoundException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "No balance found for account %s with currency %s"
                                 .formatted(accountBusinessId, currency)
                 ));

@@ -13,7 +13,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -33,9 +32,9 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleAccountNotFound(AccountNotFoundException ex) {
-        log.warn("Account not found: {}", ex.getMessage());
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(buildError(
                         ex.getMessage(),
@@ -161,17 +160,6 @@ public class GlobalExceptionHandler {
                         "Unexpected error",
                         ErrorCode.INTERNAL_ERROR,
                         HttpStatus.INTERNAL_SERVER_ERROR
-                ));
-    }
-
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
-        log.warn("Resource not found: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(buildError(
-                        ex.getMessage(),
-                        ErrorCode.NOT_FOUND,
-                        HttpStatus.NOT_FOUND
                 ));
     }
 

@@ -9,8 +9,8 @@ import com.tuum.corebanking.account.model.Account;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
-import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InvalidCurrencyException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -151,7 +151,7 @@ class AccountServiceTest {
 
         when(accountMapper.findByBusinessId(accountId)).thenReturn(Optional.empty());
 
-        assertThrows(AccountNotFoundException.class, () -> accountService.findById(accountId));
+        assertThrows(ResourceNotFoundException.class, () -> accountService.findById(accountId));
 
         verify(accountMapper).findByBusinessId(accountId);
         verifyNoInteractions(balanceService);
@@ -219,7 +219,7 @@ class AccountServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accountService.findAccountIdByBusinessId(accountBusinessId))
-                .isInstanceOf(AccountNotFoundException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Account not found with id")
                 .hasMessageContaining(accountBusinessId.toString());
 
@@ -257,7 +257,7 @@ class AccountServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accountService.findAccountIdByBusinessId(accountBusinessId))
-                .isInstanceOf(AccountNotFoundException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage(expectedMessage);
 
         verify(accountMapper).findAccountIdByBusinessId(accountBusinessId);

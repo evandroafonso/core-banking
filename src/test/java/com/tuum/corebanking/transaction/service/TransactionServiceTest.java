@@ -5,9 +5,9 @@ import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
 import com.tuum.corebanking.common.dto.PageResponse;
-import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InsufficientFundsException;
 import com.tuum.corebanking.exception.InvalidTransactionAmountException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import com.tuum.corebanking.transaction.converter.TransactionConverter;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
@@ -84,10 +84,10 @@ class TransactionServiceTest {
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
         when(balanceService.findBalanceWithLock(accountId, accountBusinessId, Currency.EUR))
-                .thenThrow(new AccountNotFoundException("No balance found for account"));
+                .thenThrow(new ResourceNotFoundException("No balance found for account"));
 
         assertThatThrownBy(() -> transactionService.create(accountBusinessId, request))
-                .isInstanceOf(AccountNotFoundException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("No balance found for account");
 
         verify(accountService).findAccountIdByBusinessId(accountBusinessId);
@@ -230,8 +230,8 @@ class TransactionServiceTest {
         when(transactionMapper.countByAccountId(accountId)).thenReturn(0L);
 
         assertThatThrownBy(() -> transactionService.findByAccountId(accountBusinessId, 0, 10))
-                .isInstanceOf(AccountNotFoundException.class)
-                .hasMessageContaining(String.valueOf(accountId));
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(String.valueOf(accountBusinessId));
 
         verify(accountService).findAccountIdByBusinessId(accountBusinessId);
         verify(transactionMapper).findByAccountId(accountId, 0, 10);

@@ -7,9 +7,9 @@ import com.tuum.corebanking.balance.service.BalanceService;
 import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.common.util.DirectionParser;
-import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InsufficientFundsException;
 import com.tuum.corebanking.exception.InvalidTransactionAmountException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import com.tuum.corebanking.transaction.converter.TransactionConverter;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
@@ -118,11 +118,12 @@ public class TransactionService {
 
         if (transactions.isEmpty() && totalElements == 0) {
             log.warn("No transactions found for account ID: {}", accountId);
-            throw new AccountNotFoundException(String.valueOf(accountId));
+            throw new ResourceNotFoundException(accountBusinessId);
         }
 
         List<TransactionResponse> responses = transactionConverter.toResponses(transactions, accountBusinessId);
-        log.info("Found {} transactions for account: {}", responses.size(), accountBusinessId);
+        log.info("Found {} transactions for account: {} (total in database: {}, page: {}, size: {})",
+                responses.size(), accountBusinessId, totalElements, page, size);
         return new PageResponse<>(responses, page, size, totalElements);
     }
 }

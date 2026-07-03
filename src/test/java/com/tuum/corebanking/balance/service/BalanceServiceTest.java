@@ -7,7 +7,7 @@ import com.tuum.corebanking.balance.event.BalanceUpdateEvent;
 import com.tuum.corebanking.balance.mapper.BalanceMapper;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
-import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -243,8 +243,8 @@ class BalanceServiceTest {
         when(balanceMapper.findByAccountIdAndCurrencyForUpdate(accountId, currency))
                 .thenReturn(Optional.empty());
 
-        AccountNotFoundException exception = assertThrows(
-                AccountNotFoundException.class,
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
                 () -> balanceService.findBalanceWithLock(accountId, accountBusinessId, currency)
         );
 

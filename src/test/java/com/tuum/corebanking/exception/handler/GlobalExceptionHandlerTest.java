@@ -15,7 +15,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -32,7 +31,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleAccountNotFoundShouldReturnNotFound() {
-        ResponseEntity<ErrorResponse> response = handler.handleAccountNotFound(new AccountNotFoundException("Msg"));
+        ResponseEntity<ErrorResponse> response = handler.handleResourceNotFound(new ResourceNotFoundException("Msg"));
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
     }
@@ -250,45 +249,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleNoResourceFoundSuccessfully() {
-        NoResourceFoundException exception = mock(NoResourceFoundException.class);
-        when(exception.getMessage()).thenReturn("No static resource api/unknown.");
-
-        ResponseEntity<ErrorResponse> response = handler.handleNoResourceFound(exception);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().message()).isEqualTo("No static resource api/unknown.");
-        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
-        assertThat(response.getBody().status()).isEqualTo(404);
-        assertThat(response.getBody().timestamp()).isNotNull();
-    }
-
-    @Test
-    void handleAccountNotFoundWithLongIdShouldReturnNotFoundAndFormattedMessage() {
-        Long accountId = 123L;
-        AccountNotFoundException exception = new AccountNotFoundException(accountId);
-
-        ResponseEntity<ErrorResponse> response = handler.handleAccountNotFound(exception);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
-        assertThat(response.getBody().message()).isEqualTo("Account not found with id: 123");
-        assertThat(response.getBody().status()).isEqualTo(404);
-    }
-
-    @Test
     void handleAccountNotFoundWithUUIDShouldReturnNotFoundAndFormattedMessage() {
         UUID businessId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-        AccountNotFoundException exception = new AccountNotFoundException(businessId);
-        ResponseEntity<ErrorResponse> response = handler.handleAccountNotFound(exception);
+        ResourceNotFoundException exception = new ResourceNotFoundException(businessId);
+        ResponseEntity<ErrorResponse> response = handler.handleResourceNotFound(exception);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().errorCode()).isEqualTo(ErrorCode.NOT_FOUND.name());
-        assertThat(response.getBody().message()).isEqualTo("Account not found with id: 123e4567-e89b-12d3-a456-426614174000");
+        assertThat(response.getBody().message()).isEqualTo("Resource not found with id: 123e4567-e89b-12d3-a456-426614174000");
         assertThat(response.getBody().status()).isEqualTo(404);
     }
 }

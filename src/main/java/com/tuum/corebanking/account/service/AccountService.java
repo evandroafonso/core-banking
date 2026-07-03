@@ -10,7 +10,7 @@ import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
 import com.tuum.corebanking.common.util.CurrencyParser;
-import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,10 +63,11 @@ public class AccountService {
     public AccountResponse findById(UUID accountId) {
         log.debug("Finding account by business ID: {}", accountId);
         Account account = accountMapper.findByBusinessId(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountId)));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: %s".formatted(accountId)));
         List<BalanceResponse> balancesResponse = balanceService.findByAccountId(account.getId());
 
-        log.info("Account found: {}", account.getBusinessId());
+        log.info("Account found with business ID: {}, country: {}, balances count: {}",
+                account.getBusinessId(), account.getCountry(), balancesResponse.size());
         return accountConverter.toResponse(account, balancesResponse);
     }
 
@@ -74,7 +75,7 @@ public class AccountService {
     public Long findAccountIdByBusinessId(UUID accountBusinessId) {
         log.debug("Finding account ID by business ID: {}", accountBusinessId);
         Long accountId = accountMapper.findAccountIdByBusinessId(accountBusinessId)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));
         log.info("Account ID found: {} for business ID: {}", accountId, accountBusinessId);
         return accountId;
     }

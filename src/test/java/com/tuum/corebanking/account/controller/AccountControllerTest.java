@@ -6,7 +6,7 @@ import com.tuum.corebanking.account.dto.response.AccountResponse;
 import com.tuum.corebanking.account.service.AccountService;
 import com.tuum.corebanking.balance.dto.response.BalanceResponse;
 import com.tuum.corebanking.balance.model.Currency;
-import com.tuum.corebanking.exception.AccountNotFoundException;
+import com.tuum.corebanking.exception.ResourceNotFoundException;
 import com.tuum.corebanking.exception.handler.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,7 +123,7 @@ class AccountControllerTest {
     void findByIdReturnsNotFoundWhenAccountDoesNotExist() throws Exception {
         UUID accountId = UUID.randomUUID();
 
-        when(accountService.findById(accountId)).thenThrow(new AccountNotFoundException("Account not found with id: " + accountId));
+        when(accountService.findById(accountId)).thenThrow(new ResourceNotFoundException("Account not found with id: " + accountId));
 
         mockMvc.perform(get("/api/accounts/" + accountId)
                         .contentType(MediaType.APPLICATION_JSON))
