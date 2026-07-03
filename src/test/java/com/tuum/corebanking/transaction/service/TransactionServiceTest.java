@@ -4,6 +4,7 @@ import com.tuum.corebanking.account.service.AccountService;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
+import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.exception.InsufficientFundsException;
 import com.tuum.corebanking.exception.InvalidTransactionAmountException;
@@ -225,14 +226,16 @@ class TransactionServiceTest {
         Long accountId = 1L;
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(transactionMapper.findByAccountId(accountId)).thenReturn(Collections.emptyList());
+        when(transactionMapper.findByAccountId(accountId, 0, 10)).thenReturn(Collections.emptyList());
+        when(transactionMapper.countByAccountId(accountId)).thenReturn(0L);
 
-        assertThatThrownBy(() -> transactionService.findByAccountId(accountBusinessId))
+        assertThatThrownBy(() -> transactionService.findByAccountId(accountBusinessId, 0, 10))
                 .isInstanceOf(AccountNotFoundException.class)
                 .hasMessageContaining(String.valueOf(accountId));
 
         verify(accountService).findAccountIdByBusinessId(accountBusinessId);
-        verify(transactionMapper).findByAccountId(accountId);
+        verify(transactionMapper).findByAccountId(accountId, 0, 10);
+        verify(transactionMapper).countByAccountId(accountId);
         verifyNoInteractions(transactionConverter);
     }
 
@@ -247,14 +250,43 @@ class TransactionServiceTest {
         ));
 
         when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
-        when(transactionMapper.findByAccountId(accountId)).thenReturn(transactions);
+        when(transactionMapper.findByAccountId(accountId, 0, 10)).thenReturn(transactions);
+        when(transactionMapper.countByAccountId(accountId)).thenReturn(1L);
         when(transactionConverter.toResponses(transactions, accountBusinessId)).thenReturn(expectedResponses);
 
-        List<TransactionResponse> actualResponses = transactionService.findByAccountId(accountBusinessId);
+        PageResponse<TransactionResponse> actualResponse = transactionService.findByAccountId(accountBusinessId, 0, 10);
 
-        assertThat(actualResponses).isEqualTo(expectedResponses);
+        assertThat(actualResponse.data()).isEqualTo(expectedResponses);
+        assertThat(actualResponse.page()).isEqualTo(0);
+        assertThat(actualResponse.size()).isEqualTo(10);
+        assertThat(actualResponse.totalElements()).isEqualTo(1);
+        assertThat(actualResponse.totalPages()).isEqualTo(1);
         verify(accountService).findAccountIdByBusinessId(accountBusinessId);
-        verify(transactionMapper).findByAccountId(accountId);
+        verify(transactionMapper).findByAccountId(accountId, 0, 10);
+        verify(transactionMapper).countByAccountId(accountId);
         verify(transactionConverter).toResponses(transactions, accountBusinessId);
+    }
+
+    @Test
+    void findByAccountIdShouldReturnEmptyPageWhenNoTransactionsOnSecondPage() {
+        UUID accountBusinessId = UUID.randomUUID();
+        Long accountId = 1L;
+
+        when(accountService.findAccountIdByBusinessId(accountBusinessId)).thenReturn(accountId);
+        when(transactionMapper.findByAccountId(accountId, 10, 10)).thenReturn(Collections.emptyList());
+        when(transactionMapper.countByAccountId(accountId)).thenReturn(5L);
+        when(transactionConverter.toResponses(Collections.emptyList(), accountBusinessId)).thenReturn(Collections.emptyList());
+
+        PageResponse<TransactionResponse> actualResponse = transactionService.findByAccountId(accountBusinessId, 1, 10);
+
+        assertThat(actualResponse.data()).isEmpty();
+        assertThat(actualResponse.page()).isEqualTo(1);
+        assertThat(actualResponse.size()).isEqualTo(10);
+        assertThat(actualResponse.totalElements()).isEqualTo(5);
+        assertThat(actualResponse.totalPages()).isEqualTo(1);
+        verify(accountService).findAccountIdByBusinessId(accountBusinessId);
+        verify(transactionMapper).findByAccountId(accountId, 10, 10);
+        verify(transactionMapper).countByAccountId(accountId);
+        verify(transactionConverter).toResponses(Collections.emptyList(), accountBusinessId);
     }
 }

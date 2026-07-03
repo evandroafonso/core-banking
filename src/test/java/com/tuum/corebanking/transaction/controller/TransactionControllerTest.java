@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.exception.handler.GlobalExceptionHandler;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
+import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.transaction.dto.response.TransactionResponse;
 import com.tuum.corebanking.transaction.model.Direction;
 import com.tuum.corebanking.transaction.service.TransactionService;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -98,21 +100,59 @@ class TransactionControllerTest {
                 BigDecimal.valueOf(1100.00)
         );
         List<TransactionResponse> responseList = List.of(transactionResponse);
+        PageResponse<TransactionResponse> pageResponse = new PageResponse<>(responseList, 0, 10, 1);
 
-        when(transactionService.findByAccountId(accountId)).thenReturn(responseList);
+        when(transactionService.findByAccountId(eq(accountId), intThat(i -> i == 0), intThat(i -> i == 10))).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/accounts/" + accountId + "/transactions")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].accountId").value(accountId.toString()))
-                .andExpect(jsonPath("$[0].transactionId").value(transactionId.toString()))
-                .andExpect(jsonPath("$[0].amount").value(50.00))
-                .andExpect(jsonPath("$[0].currency").value("EUR"))
-                .andExpect(jsonPath("$[0].direction").value("OUT"))
-                .andExpect(jsonPath("$[0].description").value("Coffee"))
-                .andExpect(jsonPath("$[0].balanceAfter").value(1100.00));
+                .andExpect(jsonPath("$.data[0].accountId").value(accountId.toString()))
+                .andExpect(jsonPath("$.data[0].transactionId").value(transactionId.toString()))
+                .andExpect(jsonPath("$.data[0].amount").value(50.00))
+                .andExpect(jsonPath("$.data[0].currency").value("EUR"))
+                .andExpect(jsonPath("$.data[0].direction").value("OUT"))
+                .andExpect(jsonPath("$.data[0].description").value("Coffee"))
+                .andExpect(jsonPath("$.data[0].balanceAfter").value(1100.00))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
 
-        verify(transactionService).findByAccountId(accountId);
+        verify(transactionService).findByAccountId(eq(accountId), intThat(i -> i == 0), intThat(i -> i == 10));
+    }
+
+    @Test
+    void findByAccountIdSuccessfullyWithCustomPagination() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        UUID transactionId = UUID.randomUUID();
+
+        TransactionResponse transactionResponse = new TransactionResponse(
+                accountId,
+                transactionId,
+                BigDecimal.valueOf(50.00),
+                Currency.EUR,
+                Direction.OUT,
+                "Coffee",
+                BigDecimal.valueOf(1100.00)
+        );
+        List<TransactionResponse> responseList = List.of(transactionResponse);
+        PageResponse<TransactionResponse> pageResponse = new PageResponse<>(responseList, 1, 20, 25);
+
+        when(transactionService.findByAccountId(eq(accountId), intThat(i -> i == 1), intThat(i -> i == 20))).thenReturn(pageResponse);
+
+        mockMvc.perform(get("/api/accounts/" + accountId + "/transactions")
+                        .param("page", "1")
+                        .param("size", "20")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].accountId").value(accountId.toString()))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(25))
+                .andExpect(jsonPath("$.totalPages").value(2));
+
+        verify(transactionService).findByAccountId(eq(accountId), intThat(i -> i == 1), intThat(i -> i == 20));
     }
 
     @Test

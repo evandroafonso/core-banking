@@ -11,5 +11,7 @@ public interface TransactionMapper {
 
     void insert(Transaction transaction);
 
-    List<Transaction> findByAccountId(@Param("accountId") Long accountId);
+    List<Transaction> findByAccountId(@Param("accountId") Long accountId, @Param("offset") int offset, @Param("limit") int limit);
+
+    long countByAccountId(@Param("accountId") Long accountId);
 }

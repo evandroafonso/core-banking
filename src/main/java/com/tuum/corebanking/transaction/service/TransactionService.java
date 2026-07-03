@@ -4,6 +4,7 @@ import com.tuum.corebanking.account.service.AccountService;
 import com.tuum.corebanking.balance.model.Balance;
 import com.tuum.corebanking.balance.model.Currency;
 import com.tuum.corebanking.balance.service.BalanceService;
+import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.common.util.DirectionParser;
 import com.tuum.corebanking.exception.AccountNotFoundException;
@@ -99,12 +100,17 @@ public class TransactionService {
         applicationEventPublisher.publishEvent(event);
     }
 
-    public List<TransactionResponse> findByAccountId(UUID accountBusinessId) {
+    public PageResponse<TransactionResponse> findByAccountId(UUID accountBusinessId, int page, int size) {
         Long accountId = accountService.findAccountIdByBusinessId(accountBusinessId);
-        List<Transaction> transactions = transactionMapper.findByAccountId(accountId);
-        if (transactions.isEmpty()) {
+        int offset = page * size;
+        List<Transaction> transactions = transactionMapper.findByAccountId(accountId, offset, size);
+        long totalElements = transactionMapper.countByAccountId(accountId);
+        
+        if (transactions.isEmpty() && totalElements == 0) {
             throw new AccountNotFoundException(String.valueOf(accountId));
         }
-        return transactionConverter.toResponses(transactions, accountBusinessId);
+        
+        List<TransactionResponse> responses = transactionConverter.toResponses(transactions, accountBusinessId);
+        return new PageResponse<>(responses, page, size, totalElements);
     }
 }

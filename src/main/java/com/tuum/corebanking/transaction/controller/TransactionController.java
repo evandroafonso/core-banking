@@ -1,5 +1,6 @@
 package com.tuum.corebanking.transaction.controller;
 
+import com.tuum.corebanking.common.dto.PageResponse;
 import com.tuum.corebanking.transaction.dto.request.TransactionRequest;
 import com.tuum.corebanking.transaction.dto.response.TransactionResponse;
 import com.tuum.corebanking.transaction.service.TransactionService;
@@ -9,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,8 +28,10 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponse>> findByAccountId(
-            @PathVariable UUID accountId) {
-        return ResponseEntity.ok(transactionService.findByAccountId(accountId));
+    public ResponseEntity<PageResponse<TransactionResponse>> findByAccountId(
+            @PathVariable UUID accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        return ResponseEntity.ok(transactionService.findByAccountId(accountId, page, size));
     }
 }
