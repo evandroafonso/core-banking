@@ -53,6 +53,10 @@ Run unit tests:
 ./gradlew test
 ```
 
+Reports are generated in for unit tests: `build/reports/tests/test/index.html`
+Actual coverage:
+![alt text](readme-images/unit-tests-coverage.png)
+
 **Run integration tests (requires Docker):**
 
 ```bash
@@ -60,6 +64,8 @@ Run unit tests:
 ```
 
 Reports are generated in `build/reports/jacoco/jacocoIntegrationTestReport/html/index.html`
+Actual coverage:
+![alt text](readme-images/integration-tests-coverage.png)
 
 **Generate coverage reports:**
 

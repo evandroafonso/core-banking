@@ -173,7 +173,7 @@ class TransactionIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data[0].description").value("T2"))
                 .andExpect(jsonPath("$.data[1].description").value("T1"))
                 .andExpect(jsonPath("$.page").value(0))
-                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.size").value(100))
                 .andExpect(jsonPath("$.totalElements").value(2))
                 .andExpect(jsonPath("$.totalPages").value(1));
     }
