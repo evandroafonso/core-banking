@@ -13,6 +13,7 @@ import com.tuum.corebanking.common.util.CurrencyParser;
 import com.tuum.corebanking.exception.AccountNotFoundException;
 import com.tuum.corebanking.messaging.event.OperationType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,7 @@ public class AccountService {
     private final AccountConverter accountConverter;
     private final BalanceService balanceService;
     private final ApplicationEventPublisher applicationEventPublisher;
-    
+
     @Transactional
     public AccountResponse create(AccountRequest request) {
         List<Currency> currencies = CurrencyParser.parseList(request.currencies());
@@ -61,6 +62,7 @@ public class AccountService {
         return accountConverter.toResponse(account, balancesResponse);
     }
 
+    @Cacheable(cacheNames = "accountIds", key = "#accountBusinessId")
     public Long findAccountIdByBusinessId(UUID accountBusinessId) {
         return accountMapper.findAccountIdByBusinessId(accountBusinessId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found with id: %s".formatted(accountBusinessId)));

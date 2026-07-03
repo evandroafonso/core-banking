@@ -2,6 +2,7 @@ package com.tuum.corebanking.transaction.listener;
 
 import com.tuum.corebanking.messaging.publisher.EventPublisher;
 import com.tuum.corebanking.transaction.event.TransactionEvent;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -16,6 +17,7 @@ public class TransactionIntegrationListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async("eventPublisherExecutor")
     public void handleTransactionCreatedEvent(TransactionEvent event) {
         String routingKey = "transaction.%s".formatted(event.operationType().name().toLowerCase());
         eventPublisher.publish(routingKey, event);

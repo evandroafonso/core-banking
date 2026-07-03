@@ -6,22 +6,12 @@ spring:
     username: banking_admin
     password: password
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 50
-      minimum-idle: 10
-      connection-timeout: 10000
 
   rabbitmq:
     host: localhost
     port: 5672
     username: banking_admin
     password: password
-    listener:
-      simple:
-        prefetch: 10
-      cache:
-        channel:
-          size: 50
 
 app:
   rabbitmq:

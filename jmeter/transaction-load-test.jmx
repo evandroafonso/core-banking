@@ -20,7 +20,7 @@
           </elementProp>
           <elementProp name="ACCOUNT_ID" elementType="Argument">
             <stringProp name="Argument.name">ACCOUNT_ID</stringProp>
-            <stringProp name="Argument.value">e946170f-02a6-4d63-97be-5adf5a153025</stringProp>
+            <stringProp name="Argument.value">50115c6e-1391-45fd-80e7-4d85dbcce34a</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -34,8 +34,8 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <stringProp name="LoopController.loops">-1</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">300</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">30</stringProp>
+        <stringProp name="ThreadGroup.num_threads">150</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">15</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.duration">120</stringProp>
         <stringProp name="ThreadGroup.delay">0</stringProp>
