@@ -153,6 +153,10 @@ The application uses Flyway for database schema management. Migration scripts ar
 - `V1__CREATE_ACCOUNTS_TABLE.sql` - Accounts table with business_id UUID
 - `V2__CREATE_BALANCES_TABLE.sql` - Balances with foreign key to accounts
 - `V3__CREATE_TRANSACTIONS_TABLE.sql` - Transactions with account_id index
+- `V4__ADD_BALANCES_INDEX.sql` - Add index in balances table
+- `V5__ADD_SEED_ACCOUNTS_TABLE` – adds seed data for the accounts table
+- `V6__ADD_SEED_BALANCES_TABLE` – adds seed data for the balances table
+- `V7__ADD_SEED_TRANSACTIONS_TABLE` – adds seed data for the transactions table
 
 Flyway runs automatically on application startup, so no manual initialization scripts are needed in Docker.
 
